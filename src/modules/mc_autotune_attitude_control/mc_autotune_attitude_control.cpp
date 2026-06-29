@@ -304,9 +304,11 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_steps_counter = 5;
 			_max_steps = 10;
 			_signal_sign = 1;
-			_input_scale = 1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
+			_input_scale = tuningModelBasedSmc() ? getModelBasedSmcInputScale(0) :
+				       1.f / (_param_mc_rollrate_p.get() * _param_mc_rollrate_k.get());
 			_signal_filter.reset(0.f);
 			_gains_backup_available = false;
+			_msmc_rate_sp_derivative_limit = 0.f;
 		}
 
 		break;
@@ -314,7 +316,12 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::roll:
 		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
-			copyGains(0);
+			if (tuningModelBasedSmc()) {
+				copyModelBasedSmcGains(0);
+
+			} else {
+				copyGains(0);
+			}
 
 			// wait for the drone to stabilize
 			_state = state::roll_pause;
@@ -328,7 +335,8 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::pitch;
 			_state_start_time = now;
 			_sys_id.reset();
-			_input_scale = 1.f / (_param_mc_pitchrate_p.get() * _param_mc_pitchrate_k.get());
+			_input_scale = tuningModelBasedSmc() ? getModelBasedSmcInputScale(1) :
+				       1.f / (_param_mc_pitchrate_p.get() * _param_mc_pitchrate_k.get());
 			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
@@ -341,7 +349,13 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::pitch:
 		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
-			copyGains(1);
+			if (tuningModelBasedSmc()) {
+				copyModelBasedSmcGains(1);
+
+			} else {
+				copyGains(1);
+			}
+
 			_state = state::pitch_pause;
 			_state_start_time = now;
 		}
@@ -353,7 +367,8 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::yaw;
 			_state_start_time = now;
 			_sys_id.reset();
-			_input_scale = 1.f / (_param_mc_yawrate_p.get() * _param_mc_yawrate_k.get());
+			_input_scale = tuningModelBasedSmc() ? getModelBasedSmcInputScale(2) :
+				       1.f / (_param_mc_yawrate_p.get() * _param_mc_yawrate_k.get());
 			_signal_filter.reset(0.f);
 			_signal_sign = 1;
 			// first step needs to be shorter to keep the drone centered
@@ -366,7 +381,13 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	case state::yaw:
 		if (areAllSmallerThan(_sys_id.getVariances(), converged_thr)
 		    && ((now - _state_start_time) > 5_s)) {
-			copyGains(2);
+			if (tuningModelBasedSmc()) {
+				copyModelBasedSmcGains(2);
+
+			} else {
+				copyGains(2);
+			}
+
 			_state = state::yaw_pause;
 			_state_start_time = now;
 		}
@@ -387,7 +408,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 		break;
 
 	case state::verification:
-		_state = areGainsGood()
+		_state = (tuningModelBasedSmc() ? areModelBasedSmcGainsGood() : areGainsGood())
 			 ? state::apply
 			 : state::fail;
 
@@ -399,7 +420,13 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state = state::wait_for_disarm;
 
 		} else if (_param_mc_at_apply.get() == 2) {
-			backupAndSaveGainsToParams();
+			if (tuningModelBasedSmc()) {
+				backupAndSaveModelBasedSmcGainsToParams();
+
+			} else {
+				backupAndSaveGainsToParams();
+			}
+
 			_state = state::test;
 
 		} else {
@@ -412,7 +439,13 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 
 	case state::wait_for_disarm:
 		if (!_armed) {
-			saveGainsToParams();
+			if (tuningModelBasedSmc()) {
+				saveModelBasedSmcGainsToParams();
+
+			} else {
+				saveGainsToParams();
+			}
+
 			_state = state::complete;
 			_state_start_time = now;
 		}
@@ -425,10 +458,17 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_state_start_time = now;
 
 		} else if ((now - _state_start_time) < 4_s
-			   && (now - _state_start_time) > 1_s
-			   && _control_power.longerThan(0.1f)) {
+				   && (now - _state_start_time) > 1_s
+				   && _control_power.longerThan(0.1f)) {
 			_state = state::fail;
-			revertParamGains();
+
+			if (tuningModelBasedSmc()) {
+				revertModelBasedSmcParamGains();
+
+			} else {
+				revertParamGains();
+			}
+
 			_state_start_time = now;
 		}
 
@@ -514,6 +554,45 @@ void McAutotuneAttitudeControl::revertParamGains()
 	}
 }
 
+void McAutotuneAttitudeControl::backupAndSaveModelBasedSmcGainsToParams()
+{
+	float backup_gains[16] = {};
+	backup_gains[0] = _param_mc_msmc_j_roll.get();
+	backup_gains[1] = _param_mc_msmc_j_pitch.get();
+	backup_gains[2] = _param_mc_msmc_j_yaw.get();
+	backup_gains[3] = _param_mc_msmc_c_roll.get();
+	backup_gains[4] = _param_mc_msmc_c_pitch.get();
+	backup_gains[5] = _param_mc_msmc_c_yaw.get();
+	backup_gains[6] = _param_mc_msmc_eta_roll.get();
+	backup_gains[7] = _param_mc_msmc_eta_pitch.get();
+	backup_gains[8] = _param_mc_msmc_eta_yaw.get();
+	backup_gains[9] = _param_mc_msmc_bnd_roll.get();
+	backup_gains[10] = _param_mc_msmc_bnd_pitch.get();
+	backup_gains[11] = _param_mc_msmc_bnd_yaw.get();
+	backup_gains[12] = _param_mc_msmc_ks_roll.get();
+	backup_gains[13] = _param_mc_msmc_ks_pitch.get();
+	backup_gains[14] = _param_mc_msmc_ks_yaw.get();
+	backup_gains[15] = _param_mc_msmc_rate_sp_deriv_lim.get();
+
+	saveModelBasedSmcGainsToParams();
+
+	_msmc_j = Vector3f(backup_gains[0], backup_gains[1], backup_gains[2]);
+	_msmc_c = Vector3f(backup_gains[3], backup_gains[4], backup_gains[5]);
+	_msmc_eta = Vector3f(backup_gains[6], backup_gains[7], backup_gains[8]);
+	_msmc_bnd = Vector3f(backup_gains[9], backup_gains[10], backup_gains[11]);
+	_msmc_ks = Vector3f(backup_gains[12], backup_gains[13], backup_gains[14]);
+	_msmc_rate_sp_derivative_limit = backup_gains[15];
+
+	_gains_backup_available = true;
+}
+
+void McAutotuneAttitudeControl::revertModelBasedSmcParamGains()
+{
+	if (_gains_backup_available) {
+		saveModelBasedSmcGainsToParams();
+	}
+}
+
 bool McAutotuneAttitudeControl::registerActuatorControlsCallback()
 {
 	if (!_vehicle_torque_setpoint_sub.registerCallback()) {
@@ -541,6 +620,68 @@ void McAutotuneAttitudeControl::copyGains(int index)
 		_rate_d(index) = _kid(2);
 		_att_p(index) = _attitude_p;
 	}
+}
+
+bool McAutotuneAttitudeControl::tuningModelBasedSmc() const
+{
+	return _param_mc_rate_ctrl_t.get() == 2;
+}
+
+float McAutotuneAttitudeControl::getModelBasedSmcInputScale(int index) const
+{
+	const Vector3f inertia(_param_mc_msmc_j_roll.get(), _param_mc_msmc_j_pitch.get(), _param_mc_msmc_j_yaw.get());
+	const Vector3f c(_param_mc_msmc_c_roll.get(), _param_mc_msmc_c_pitch.get(), _param_mc_msmc_c_yaw.get());
+	const Vector3f eta(_param_mc_msmc_eta_roll.get(), _param_mc_msmc_eta_pitch.get(), _param_mc_msmc_eta_yaw.get());
+	const Vector3f bnd(_param_mc_msmc_bnd_roll.get(), _param_mc_msmc_bnd_pitch.get(), _param_mc_msmc_bnd_yaw.get());
+	const Vector3f ks(_param_mc_msmc_ks_roll.get(), _param_mc_msmc_ks_pitch.get(), _param_mc_msmc_ks_yaw.get());
+
+	const float boundary = math::max(bnd(index), 0.01f);
+	const float equivalent_rate_gain = inertia(index) * (c(index) + eta(index) / boundary + ks(index));
+
+	return 1.f / math::constrain(equivalent_rate_gain, 0.02f, 1.f);
+}
+
+void McAutotuneAttitudeControl::copyModelBasedSmcGains(int index)
+{
+	if (index <= 2) {
+		const float desired_rise_time = (index == 2) ? 0.2f : _param_mc_at_rise_time.get();
+		const float identified_rate_gain = math::constrain(_kid(0), 0.01f, 0.5f);
+
+		_msmc_j(index) = math::constrain(0.45f * identified_rate_gain, 0.005f, 0.2f);
+		_msmc_c(index) = math::constrain(0.12f / math::max(desired_rise_time, 0.05f), 0.25f, 1.5f);
+		_msmc_eta(index) = math::constrain(0.6f * _msmc_c(index), 0.05f, 1.0f);
+		_msmc_bnd(index) = (index == 2) ? 0.30f : 0.25f;
+		_msmc_ks(index) = math::constrain(0.06f * _msmc_c(index), 0.005f, 0.12f);
+
+		const float rate_sp_derivative_limit = math::constrain(1.4f / math::max(desired_rise_time, 0.05f), 3.f, 20.f);
+		_msmc_rate_sp_derivative_limit = math::max(_msmc_rate_sp_derivative_limit, rate_sp_derivative_limit);
+	}
+}
+
+bool McAutotuneAttitudeControl::areModelBasedSmcGainsGood() const
+{
+	const bool are_finite = _msmc_j.isAllFinite()
+				&& _msmc_c.isAllFinite()
+				&& _msmc_eta.isAllFinite()
+				&& _msmc_bnd.isAllFinite()
+				&& _msmc_ks.isAllFinite()
+				&& PX4_ISFINITE(_msmc_rate_sp_derivative_limit);
+
+	const bool are_positive = _msmc_j.min() > 0.f
+				  && _msmc_c.min() > 0.f
+				  && _msmc_eta.min() > 0.f
+				  && _msmc_bnd.min() > 0.f
+				  && _msmc_ks.min() > 0.f
+				  && _msmc_rate_sp_derivative_limit > 0.f;
+
+	const bool are_small_enough = _msmc_j.max() <= 0.2f
+				      && _msmc_c.max() <= 1.5f
+				      && _msmc_eta.max() <= 1.0f
+				      && _msmc_bnd.max() <= 0.5f
+				      && _msmc_ks.max() <= 0.12f
+				      && _msmc_rate_sp_derivative_limit <= 20.f;
+
+	return are_finite && are_positive && are_small_enough;
 }
 
 bool McAutotuneAttitudeControl::areGainsGood() const
@@ -593,6 +734,47 @@ void McAutotuneAttitudeControl::saveGainsToParams()
 	_param_mc_yawrate_i.commit_no_notification();
 	_param_mc_yawrate_d.commit_no_notification();
 	_param_mc_yaw_p.commit();
+}
+
+void McAutotuneAttitudeControl::saveModelBasedSmcGainsToParams()
+{
+	_param_mc_msmc_j_roll.set(_msmc_j(0));
+	_param_mc_msmc_j_pitch.set(_msmc_j(1));
+	_param_mc_msmc_j_yaw.set(_msmc_j(2));
+	_param_mc_msmc_j_roll.commit_no_notification();
+	_param_mc_msmc_j_pitch.commit_no_notification();
+	_param_mc_msmc_j_yaw.commit_no_notification();
+
+	_param_mc_msmc_c_roll.set(_msmc_c(0));
+	_param_mc_msmc_c_pitch.set(_msmc_c(1));
+	_param_mc_msmc_c_yaw.set(_msmc_c(2));
+	_param_mc_msmc_c_roll.commit_no_notification();
+	_param_mc_msmc_c_pitch.commit_no_notification();
+	_param_mc_msmc_c_yaw.commit_no_notification();
+
+	_param_mc_msmc_eta_roll.set(_msmc_eta(0));
+	_param_mc_msmc_eta_pitch.set(_msmc_eta(1));
+	_param_mc_msmc_eta_yaw.set(_msmc_eta(2));
+	_param_mc_msmc_eta_roll.commit_no_notification();
+	_param_mc_msmc_eta_pitch.commit_no_notification();
+	_param_mc_msmc_eta_yaw.commit_no_notification();
+
+	_param_mc_msmc_bnd_roll.set(_msmc_bnd(0));
+	_param_mc_msmc_bnd_pitch.set(_msmc_bnd(1));
+	_param_mc_msmc_bnd_yaw.set(_msmc_bnd(2));
+	_param_mc_msmc_bnd_roll.commit_no_notification();
+	_param_mc_msmc_bnd_pitch.commit_no_notification();
+	_param_mc_msmc_bnd_yaw.commit_no_notification();
+
+	_param_mc_msmc_ks_roll.set(_msmc_ks(0));
+	_param_mc_msmc_ks_pitch.set(_msmc_ks(1));
+	_param_mc_msmc_ks_yaw.set(_msmc_ks(2));
+	_param_mc_msmc_ks_roll.commit_no_notification();
+	_param_mc_msmc_ks_pitch.commit_no_notification();
+	_param_mc_msmc_ks_yaw.commit_no_notification();
+
+	_param_mc_msmc_rate_sp_deriv_lim.set(_msmc_rate_sp_derivative_limit);
+	_param_mc_msmc_rate_sp_deriv_lim.commit();
 }
 
 void McAutotuneAttitudeControl::stopAutotune()
