@@ -42,3 +42,69 @@ TEST(RateControlTest, AllZeroCase)
 	Vector3f torque = rate_control.update(Vector3f(), Vector3f(), Vector3f(), 0.f, false);
 	EXPECT_EQ(torque, Vector3f());
 }
+
+TEST(RateControlTest, PracticalSmcMode)
+{
+	RateControl rate_control;
+	rate_control.setControllerType(1);
+	rate_control.setIntegratorLimit(Vector3f(1.f, 1.f, 1.f));
+	rate_control.setSmcGains(Vector3f(), Vector3f(1.f, 1.f, 1.f), Vector3f(0.1f, 0.1f, 0.1f), Vector3f(),
+				 Vector3f());
+	rate_control.setSMCSafeguards(0.f, 0.f);
+
+	const Vector3f torque = rate_control.update(Vector3f(), Vector3f(1.f, 0.f, 0.f), Vector3f(), 0.01f, false);
+
+	EXPECT_FLOAT_EQ(torque(0), 1.f);
+	EXPECT_FLOAT_EQ(torque(1), 0.f);
+	EXPECT_FLOAT_EQ(torque(2), 0.f);
+}
+
+TEST(RateControlTest, ModelBasedSmcMode)
+{
+	RateControl rate_control;
+	rate_control.setControllerType(2);
+	rate_control.setIntegratorLimit(Vector3f(1.f, 1.f, 1.f));
+	rate_control.setModelBasedSmcGains(Vector3f(0.5f, 0.5f, 0.5f), Vector3f(), Vector3f(1.f, 1.f, 1.f),
+					   Vector3f(0.1f, 0.1f, 0.1f), Vector3f(), 10.f);
+	rate_control.setSMCSafeguards(0.f, 0.f);
+
+	const Vector3f torque = rate_control.update(Vector3f(), Vector3f(1.f, 0.f, 0.f), Vector3f(), 0.01f, false);
+
+	EXPECT_FLOAT_EQ(torque(0), 0.5f);
+	EXPECT_FLOAT_EQ(torque(1), 0.f);
+	EXPECT_FLOAT_EQ(torque(2), 0.f);
+}
+
+TEST(RateControlTest, ModelBasedSmcGyroCompensation)
+{
+	RateControl rate_control;
+	rate_control.setControllerType(2);
+	rate_control.setIntegratorLimit(Vector3f(1.f, 1.f, 1.f));
+	rate_control.setModelBasedSmcGains(Vector3f(2.f, 3.f, 4.f), Vector3f(), Vector3f(), Vector3f(0.1f, 0.1f, 0.1f),
+					   Vector3f(), 10.f);
+	rate_control.setSMCSafeguards(0.f, 0.f);
+
+	const Vector3f rates(1.f, 2.f, 3.f);
+	const Vector3f torque = rate_control.update(rates, rates, Vector3f(), 0.01f, false);
+
+	EXPECT_FLOAT_EQ(torque(0), 6.f);
+	EXPECT_FLOAT_EQ(torque(1), -6.f);
+	EXPECT_FLOAT_EQ(torque(2), 2.f);
+}
+
+TEST(RateControlTest, ModelBasedSmcRateSetpointDerivativeLimit)
+{
+	RateControl rate_control;
+	rate_control.setControllerType(2);
+	rate_control.setIntegratorLimit(Vector3f(1.f, 1.f, 1.f));
+	rate_control.setModelBasedSmcGains(Vector3f(1.f, 1.f, 1.f), Vector3f(), Vector3f(), Vector3f(0.1f, 0.1f, 0.1f),
+					   Vector3f(), 10.f);
+	rate_control.setSMCSafeguards(0.f, 0.f);
+
+	rate_control.update(Vector3f(), Vector3f(), Vector3f(), 0.01f, false);
+	const Vector3f torque = rate_control.update(Vector3f(), Vector3f(1.f, 0.f, 0.f), Vector3f(), 0.01f, false);
+
+	EXPECT_FLOAT_EQ(torque(0), 10.f);
+	EXPECT_FLOAT_EQ(torque(1), 0.f);
+	EXPECT_FLOAT_EQ(torque(2), 0.f);
+}

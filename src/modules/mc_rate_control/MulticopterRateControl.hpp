@@ -42,7 +42,6 @@
 #include <px4_platform_common/module_params.h>
 #include <px4_platform_common/posix.h>
 #include <px4_platform_common/px4_work_queue/ScheduledWorkItem.hpp>
-#include <lib/systemlib/mavlink_log.h>
 #include <uORB/Publication.hpp>
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/Subscription.hpp>
@@ -134,9 +133,6 @@ private:
 
 	AlphaFilter<float> _output_lpf_yaw;
 
-	float _smc_watchdog_time{0.f};
-	orb_advert_t _mavlink_log_pub{nullptr};
-
 	DEFINE_PARAMETERS(
 		(ParamFloat<px4::params::MC_ROLLRATE_P>) _param_mc_rollrate_p,
 		(ParamFloat<px4::params::MC_ROLLRATE_I>) _param_mc_rollrate_i,
@@ -191,6 +187,27 @@ private:
 		(ParamFloat<px4::params::MC_SMC_KEQ_R>) _param_mc_smc_keq_roll,
 		(ParamFloat<px4::params::MC_SMC_KEQ_P>) _param_mc_smc_keq_pitch,
 		(ParamFloat<px4::params::MC_SMC_KEQ_Y>) _param_mc_smc_keq_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_J_R>) _param_mc_msmc_j_roll,
+		(ParamFloat<px4::params::MC_MSMC_J_P>) _param_mc_msmc_j_pitch,
+		(ParamFloat<px4::params::MC_MSMC_J_Y>) _param_mc_msmc_j_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_C_R>) _param_mc_msmc_c_roll,
+		(ParamFloat<px4::params::MC_MSMC_C_P>) _param_mc_msmc_c_pitch,
+		(ParamFloat<px4::params::MC_MSMC_C_Y>) _param_mc_msmc_c_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_ETA_R>) _param_mc_msmc_eta_roll,
+		(ParamFloat<px4::params::MC_MSMC_ETA_P>) _param_mc_msmc_eta_pitch,
+		(ParamFloat<px4::params::MC_MSMC_ETA_Y>) _param_mc_msmc_eta_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_BND_R>) _param_mc_msmc_bnd_roll,
+		(ParamFloat<px4::params::MC_MSMC_BND_P>) _param_mc_msmc_bnd_pitch,
+		(ParamFloat<px4::params::MC_MSMC_BND_Y>) _param_mc_msmc_bnd_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_KS_R>) _param_mc_msmc_ks_roll,
+		(ParamFloat<px4::params::MC_MSMC_KS_P>) _param_mc_msmc_ks_pitch,
+		(ParamFloat<px4::params::MC_MSMC_KS_Y>) _param_mc_msmc_ks_yaw,
+		(ParamFloat<px4::params::MC_MSMC_RSPD_L>) _param_mc_msmc_rate_sp_deriv_lim,
 
 		(ParamFloat<px4::params::MC_SMC_LPF>) _param_mc_smc_lpf,
 		(ParamFloat<px4::params::MC_SMC_SLEW>) _param_mc_smc_slew,

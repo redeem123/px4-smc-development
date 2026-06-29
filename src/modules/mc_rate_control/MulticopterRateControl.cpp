@@ -103,6 +103,15 @@ MulticopterRateControl::parameters_updated()
 		Vector3f(_param_mc_smc_keq_roll.get(), _param_mc_smc_keq_pitch.get(), _param_mc_smc_keq_yaw.get())
 	);
 
+	_rate_control.setModelBasedSmcGains(
+		Vector3f(_param_mc_msmc_j_roll.get(), _param_mc_msmc_j_pitch.get(), _param_mc_msmc_j_yaw.get()),
+		Vector3f(_param_mc_msmc_c_roll.get(), _param_mc_msmc_c_pitch.get(), _param_mc_msmc_c_yaw.get()),
+		Vector3f(_param_mc_msmc_eta_roll.get(), _param_mc_msmc_eta_pitch.get(), _param_mc_msmc_eta_yaw.get()),
+		Vector3f(_param_mc_msmc_bnd_roll.get(), _param_mc_msmc_bnd_pitch.get(), _param_mc_msmc_bnd_yaw.get()),
+		Vector3f(_param_mc_msmc_ks_roll.get(), _param_mc_msmc_ks_pitch.get(), _param_mc_msmc_ks_yaw.get()),
+		_param_mc_msmc_rate_sp_deriv_lim.get()
+	);
+
 	_rate_control.setSMCSafeguards(_param_mc_smc_lpf.get(), _param_mc_smc_slew.get());
 
 	// manual rate control acro mode rate limits
@@ -230,34 +239,6 @@ MulticopterRateControl::Run()
 			Vector3f torque_setpoint =
 				_rate_control.update(rates, _rates_setpoint, angular_accel, dt, _maybe_landed || _landed);
 
-			// SMC Safety Watchdog fallback to PID
-			if (_param_mc_rate_ctrl_t.get() == 1 && _vehicle_control_mode.flag_armed && !_landed && !_maybe_landed) {
-				const float wd_err = _param_mc_smc_wd_err.get();
-				if (wd_err > 0.05f) {
-					const Vector3f rate_error = _rates_setpoint - rates;
-					if (abs(rate_error(0)) > wd_err || abs(rate_error(1)) > wd_err || abs(rate_error(2)) > wd_err) {
-						_smc_watchdog_time += dt;
-						if (_smc_watchdog_time >= _param_mc_smc_wd_tout.get()) {
-							param_t param_ctrl_t = param_find("MC_RATE_CTRL_T");
-							if (param_ctrl_t != PARAM_INVALID) {
-								int32_t fallback_val = 0;
-								param_set(param_ctrl_t, &fallback_val);
-								_rate_control.setControllerType(0);
-								mavlink_log_critical(&_mavlink_log_pub, "SMC Watchdog: Large tracking error! Falling back to PID.");
-								PX4_WARN("SMC Watchdog: Large tracking error! Falling back to PID.");
-							}
-							_smc_watchdog_time = 0.f;
-						}
-					} else {
-						_smc_watchdog_time = 0.f;
-					}
-				} else {
-					_smc_watchdog_time = 0.f;
-				}
-			} else {
-				_smc_watchdog_time = 0.f;
-			}
-
 			// apply low-pass filtering on yaw axis to reduce high frequency torque caused by rotor acceleration
 			torque_setpoint(2) = _output_lpf_yaw.update(torque_setpoint(2), dt);
 
@@ -293,7 +274,6 @@ MulticopterRateControl::Run()
 					}
 				}
 			}
-
 			vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint_pub.publish(vehicle_thrust_setpoint);

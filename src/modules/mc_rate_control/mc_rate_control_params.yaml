@@ -239,11 +239,11 @@ parameters:
     MC_RATE_CTRL_T:
       description:
         short: Rate controller type
-        long: Choose rate controller type. 0 = PID, 1 = Sliding Mode Control (SMC)
+        long: Choose rate controller type. 0 = PID, 1 = practical Sliding Mode Control (SMC), 2 = model-based SMC
       type: int32
       default: 0
       min: 0
-      max: 1
+      max: 2
     MC_SMC_C_R:
       description:
         short: Roll SMC sliding surface gain
@@ -349,6 +349,127 @@ parameters:
       default: 0.15
       min: 0.0
       max: 2.0
+    MC_MSMC_J_R:
+      description:
+        short: Roll model-based SMC inertia scale
+        long: Diagonal inertia/control-effectiveness scale used by the model-based SMC roll axis.
+      type: float
+      default: 0.06
+      min: 0.0
+      max: 5.0
+      decimal: 4
+    MC_MSMC_J_P:
+      description:
+        short: Pitch model-based SMC inertia scale
+        long: Diagonal inertia/control-effectiveness scale used by the model-based SMC pitch axis.
+      type: float
+      default: 0.06
+      min: 0.0
+      max: 5.0
+      decimal: 4
+    MC_MSMC_J_Y:
+      description:
+        short: Yaw model-based SMC inertia scale
+        long: Diagonal inertia/control-effectiveness scale used by the model-based SMC yaw axis.
+      type: float
+      default: 0.03
+      min: 0.0
+      max: 5.0
+      decimal: 4
+    MC_MSMC_C_R:
+      description:
+        short: Roll model-based SMC sliding surface gain
+      type: float
+      default: 0.8
+      min: 0.1
+      max: 10.0
+    MC_MSMC_C_P:
+      description:
+        short: Pitch model-based SMC sliding surface gain
+      type: float
+      default: 0.8
+      min: 0.1
+      max: 10.0
+    MC_MSMC_C_Y:
+      description:
+        short: Yaw model-based SMC sliding surface gain
+      type: float
+      default: 0.5
+      min: 0.1
+      max: 10.0
+    MC_MSMC_ETA_R:
+      description:
+        short: Roll model-based SMC reaching gain
+      type: float
+      default: 0.5
+      min: 0.0
+      max: 10.0
+    MC_MSMC_ETA_P:
+      description:
+        short: Pitch model-based SMC reaching gain
+      type: float
+      default: 0.5
+      min: 0.0
+      max: 10.0
+    MC_MSMC_ETA_Y:
+      description:
+        short: Yaw model-based SMC reaching gain
+      type: float
+      default: 0.3
+      min: 0.0
+      max: 10.0
+    MC_MSMC_BND_R:
+      description:
+        short: Roll model-based SMC boundary layer
+      type: float
+      default: 0.25
+      min: 0.01
+      max: 1.0
+    MC_MSMC_BND_P:
+      description:
+        short: Pitch model-based SMC boundary layer
+      type: float
+      default: 0.25
+      min: 0.01
+      max: 1.0
+    MC_MSMC_BND_Y:
+      description:
+        short: Yaw model-based SMC boundary layer
+      type: float
+      default: 0.25
+      min: 0.01
+      max: 1.0
+    MC_MSMC_KS_R:
+      description:
+        short: Roll model-based SMC linear sliding gain
+      type: float
+      default: 0.05
+      min: 0.0
+      max: 5.0
+    MC_MSMC_KS_P:
+      description:
+        short: Pitch model-based SMC linear sliding gain
+      type: float
+      default: 0.05
+      min: 0.0
+      max: 5.0
+    MC_MSMC_KS_Y:
+      description:
+        short: Yaw model-based SMC linear sliding gain
+      type: float
+      default: 0.03
+      min: 0.0
+      max: 5.0
+    MC_MSMC_RSPD_L:
+      description:
+        short: Model-based SMC rate setpoint derivative limit
+        long: Limits the desired angular acceleration feed-forward term derived from rate setpoint changes.
+      type: float
+      default: 10.0
+      min: 0.0
+      max: 1000.0
+      unit: rad/s^2
+      decimal: 1
     MC_SMC_LPF:
       description:
         short: Cutoff frequency for SMC sliding surface LPF
@@ -369,7 +490,7 @@ parameters:
     MC_SMC_WD_ERR:
       description:
         short: SMC Watchdog rate error threshold
-        long: If rate tracking error exceeds this threshold for MC_SMC_WD_TOUT seconds, falls back to PID. Set to 0 to disable.
+        long: SMC watchdog threshold retained for parameter compatibility. This research build does not fall back to PID on large tracking error.
       type: float
       default: 1.0
       min: 0.0
@@ -378,10 +499,9 @@ parameters:
     MC_SMC_WD_TOUT:
       description:
         short: SMC Watchdog error timeout duration
+        long: Retained for parameter compatibility. This research build does not fall back to PID on watchdog timeout.
       type: float
       default: 1.0
       min: 0.1
       max: 5.0
       unit: s
-
-

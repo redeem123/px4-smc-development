@@ -693,6 +693,14 @@ void Navigator::run()
 
 				rep->current.alt = cmd.param7;
 
+				if (get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING) {
+					const float max_takeoff_alt = get_global_position()->alt + get_param_mis_takeoff_alt();
+
+					if (PX4_ISFINITE(rep->current.alt) && PX4_ISFINITE(max_takeoff_alt)) {
+						rep->current.alt = math::min(rep->current.alt, max_takeoff_alt);
+					}
+				}
+
 				rep->current.valid = true;
 				rep->current.timestamp = hrt_absolute_time();
 

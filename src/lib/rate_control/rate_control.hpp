@@ -97,9 +97,9 @@ public:
 				const matrix::Vector3f &angular_accel, const float dt, const bool landed);
 
 	/**
-	 * Set controller type (0 = PID, 1 = SMC)
+	 * Set controller type (0 = PID, 1 = practical SMC, 2 = model-based SMC)
 	 */
-	void setControllerType(int type) { _controller_type = type; }
+	void setControllerType(int type);
 
 	/**
 	 * Set SMC gains
@@ -108,10 +108,16 @@ public:
 			 const matrix::Vector3f &ks, const matrix::Vector3f &keq);
 
 	/**
+	 * Set model-based SMC parameters
+	 */
+	void setModelBasedSmcGains(const matrix::Vector3f &inertia, const matrix::Vector3f &c,
+				   const matrix::Vector3f &eta, const matrix::Vector3f &bnd,
+				   const matrix::Vector3f &ks, float rate_sp_derivative_limit);
+
+	/**
 	 * Set SMC safeguards (LPF cutoff frequency and Slew rate limit)
 	 */
 	void setSMCSafeguards(float cutoff, float slew) { _smc_lpf_cutoff = cutoff; _smc_slew_max = slew; }
-
 
 	/**
 	 * Set the integral term to 0 to prevent windup
@@ -123,6 +129,8 @@ public:
 		_smc_rate_int.zero();
 		_smc_s_filtered.zero();
 		_smc_last_torque.zero();
+		_smc_last_rate_sp.zero();
+		_smc_rate_sp_prev_valid = false;
 	}
 
 	/**
@@ -137,6 +145,8 @@ public:
 			_smc_rate_int(axis) = 0.f;
 			_smc_s_filtered(axis) = 0.f;
 			_smc_last_torque(axis) = 0.f;
+			_smc_last_rate_sp(axis) = 0.f;
+			_smc_rate_sp_prev_valid = false;
 		}
 	}
 
@@ -149,6 +159,8 @@ public:
 private:
 	void updateIntegral(matrix::Vector3f &rate_error, const float dt);
 	matrix::Vector3f updateSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp, const float dt, const bool landed);
+	matrix::Vector3f updateModelBasedSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp, const float dt,
+					     const bool landed);
 	void updateSMCIntegral(const matrix::Vector3f &rate_error, const float dt);
 
 	// Controller Type
@@ -160,6 +172,14 @@ private:
 	matrix::Vector3f _smc_bnd;
 	matrix::Vector3f _smc_ks;
 	matrix::Vector3f _smc_keq;
+
+	// Model-based SMC parameters
+	matrix::Vector3f _msmc_inertia;
+	matrix::Vector3f _msmc_c;
+	matrix::Vector3f _msmc_eta;
+	matrix::Vector3f _msmc_bnd;
+	matrix::Vector3f _msmc_ks;
+	float _msmc_rate_sp_derivative_limit{10.f};
 
 	// Gains
 	matrix::Vector3f _gain_p; ///< rate control proportional gain for all axes x, y, z
@@ -173,6 +193,8 @@ private:
 	matrix::Vector3f _smc_rate_int; ///< integral term of the SMC controller
 	matrix::Vector3f _smc_s_filtered; ///< filtered sliding surface state
 	matrix::Vector3f _smc_last_torque; ///< last output torque state
+	matrix::Vector3f _smc_last_rate_sp; ///< last rate setpoint for model-based SMC feed-forward acceleration
+	bool _smc_rate_sp_prev_valid{false};
 
 	// Safeguards configurations
 	float _smc_lpf_cutoff{20.0f}; ///< Cutoff frequency for sliding surface LPF (Hz)
@@ -182,4 +204,3 @@ private:
 	matrix::Vector<bool, 3> _control_allocator_saturation_negative;
 	matrix::Vector<bool, 3> _control_allocator_saturation_positive;
 };
-
