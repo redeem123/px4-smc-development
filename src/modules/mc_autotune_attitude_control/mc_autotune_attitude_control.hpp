@@ -164,6 +164,7 @@ private:
 	matrix::Vector3f _msmc_bnd{};
 	matrix::Vector3f _msmc_ks{};
 	float _msmc_rate_sp_derivative_limit{0.f};
+	bool _msmc_rate_sp_derivative_enabled{true};
 
 	matrix::Vector3f _control_power{};
 

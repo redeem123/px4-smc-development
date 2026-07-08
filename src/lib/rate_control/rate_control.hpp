@@ -97,15 +97,9 @@ public:
 				const matrix::Vector3f &angular_accel, const float dt, const bool landed);
 
 	/**
-	 * Set controller type (0 = PID, 1 = practical SMC, 2 = model-based SMC)
+	 * Set controller type (0 = PID, 1 = MPC, 2 = model-based SMC)
 	 */
 	void setControllerType(int type);
-
-	/**
-	 * Set SMC gains
-	 */
-	void setSmcGains(const matrix::Vector3f &c, const matrix::Vector3f &eta, const matrix::Vector3f &bnd,
-			 const matrix::Vector3f &ks, const matrix::Vector3f &keq);
 
 	/**
 	 * Set model-based SMC parameters
@@ -117,7 +111,54 @@ public:
 	/**
 	 * Set SMC safeguards (LPF cutoff frequency and Slew rate limit)
 	 */
-	void setSMCSafeguards(float cutoff, float slew) { _smc_lpf_cutoff = cutoff; _smc_slew_max = slew; }
+	void setSMCSafeguards(float cutoff, float slew);
+
+	/**
+	 * Set rate-level MPC parameters
+	 */
+	void setMpcGains(const matrix::Vector3f &inertia, const matrix::Vector3f &rate_weight,
+			 const matrix::Vector3f &control_effectiveness, const matrix::Vector3f &torque_weight,
+			 const matrix::Vector3f &torque_rate_weight, int horizon, float torque_slew_rate);
+
+	/**
+	 * Set rate-level MPC integral bias adaptation gains.
+	 */
+	void setMpcIntegralGain(const matrix::Vector3f &I);
+
+	/**
+	 * Set rate-level MPC normalized torque constraints.
+	 */
+	void setMpcTorqueLimit(const matrix::Vector3f &torque_limit);
+
+	/**
+	 * Set rate-level MPC rate-setpoint derivative feed-forward limit.
+	 */
+	void setMpcRateSetpointDerivativeLimit(float rate_sp_derivative_limit);
+
+	/**
+	 * Set rate MPC rigid-body gyroscopic compensation blend.
+	 */
+	void setMpcGyroCompensation(float gyro_compensation_weight);
+
+	/**
+	 * Reset model-based SMC rate setpoint feed-forward history.
+	 */
+	void resetModelBasedSmcSetpoint()
+	{
+		_smc_last_rate_sp.zero();
+		_smc_rate_sp_prev_valid = false;
+	}
+
+	/**
+	 * Reset SMC-only dynamic state.
+	 */
+	void resetSmcState()
+	{
+		_smc_rate_int.zero();
+		_smc_s_filtered.zero();
+		_smc_last_torque.zero();
+		resetModelBasedSmcSetpoint();
+	}
 
 	/**
 	 * Set the integral term to 0 to prevent windup
@@ -126,11 +167,12 @@ public:
 	void resetIntegral()
 	{
 		_rate_int.zero();
-		_smc_rate_int.zero();
-		_smc_s_filtered.zero();
-		_smc_last_torque.zero();
-		_smc_last_rate_sp.zero();
-		_smc_rate_sp_prev_valid = false;
+		resetSmcState();
+		_mpc_rate_int.zero();
+		_mpc_last_torque.zero();
+		_mpc_last_rate_sp.zero();
+		_mpc_rate_sp_prev_valid = false;
+		_mpc_last_torque_valid = false;
 	}
 
 	/**
@@ -147,6 +189,11 @@ public:
 			_smc_last_torque(axis) = 0.f;
 			_smc_last_rate_sp(axis) = 0.f;
 			_smc_rate_sp_prev_valid = false;
+			_mpc_rate_int(axis) = 0.f;
+			_mpc_last_torque(axis) = 0.f;
+			_mpc_last_rate_sp(axis) = 0.f;
+			_mpc_rate_sp_prev_valid = false;
+			_mpc_last_torque_valid = false;
 		}
 	}
 
@@ -158,20 +205,14 @@ public:
 
 private:
 	void updateIntegral(matrix::Vector3f &rate_error, const float dt);
-	matrix::Vector3f updateSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp, const float dt, const bool landed);
+	matrix::Vector3f updateMPC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp,
+				   const float dt, const bool landed);
 	matrix::Vector3f updateModelBasedSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp, const float dt,
-					     const bool landed);
+					     const matrix::Vector3f &angular_accel, const bool landed);
 	void updateSMCIntegral(const matrix::Vector3f &rate_error, const float dt);
 
 	// Controller Type
 	int _controller_type{0};
-
-	// SMC Gains
-	matrix::Vector3f _smc_c;
-	matrix::Vector3f _smc_eta;
-	matrix::Vector3f _smc_bnd;
-	matrix::Vector3f _smc_ks;
-	matrix::Vector3f _smc_keq;
 
 	// Model-based SMC parameters
 	matrix::Vector3f _msmc_inertia;
@@ -180,6 +221,25 @@ private:
 	matrix::Vector3f _msmc_bnd;
 	matrix::Vector3f _msmc_ks;
 	float _msmc_rate_sp_derivative_limit{10.f};
+
+	// Rate MPC parameters
+	static constexpr int MPC_MAX_HORIZON = 8;
+	matrix::Vector3f _mpc_inertia;
+	matrix::Vector3f _mpc_rate_weight;
+	matrix::Vector3f _mpc_control_effectiveness;
+	matrix::Vector3f _mpc_torque_weight;
+	matrix::Vector3f _mpc_torque_rate_weight;
+	matrix::Vector3f _mpc_integral_gain;
+	matrix::Vector3f _mpc_torque_limit{1.f, 1.f, 1.f};
+	matrix::Vector3f _mpc_rate_int;
+	matrix::Vector3f _mpc_last_torque;
+	matrix::Vector3f _mpc_last_rate_sp;
+	int _mpc_horizon{6};
+	float _mpc_torque_slew_rate{10.f};
+	float _mpc_rate_sp_derivative_limit{0.f};
+	float _mpc_gyro_compensation_weight{0.f};
+	bool _mpc_last_torque_valid{false};
+	bool _mpc_rate_sp_prev_valid{false};
 
 	// Gains
 	matrix::Vector3f _gain_p; ///< rate control proportional gain for all axes x, y, z

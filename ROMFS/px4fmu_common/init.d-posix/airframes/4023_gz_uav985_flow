@@ -1,0 +1,17 @@
+#!/bin/sh
+#
+# @name Gazebo UAV985 CAD quadrotor with downward optical flow and distance sensor
+#
+# @type Quadrotor
+#
+
+PX4_SIM_MODEL=${PX4_SIM_MODEL:=uav985_flow}
+PX4_GZ_WORLD=${PX4_GZ_WORLD:=aruco}
+
+. ${R}etc/init.d-posix/airframes/4022_gz_uav985
+
+echo "Disabling Sim GPS"
+param set-default SYS_HAS_GPS 0
+param set-default SIM_GPS_USED 0
+param set-default EKF2_GPS_CTRL 0
+param set-default MIS_TAKEOFF_ALT 1.0

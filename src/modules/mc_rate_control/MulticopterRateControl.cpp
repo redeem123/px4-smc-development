@@ -74,6 +74,36 @@ MulticopterRateControl::init()
 	return true;
 }
 
+MulticopterRateControl::RateSetpointSource
+MulticopterRateControl::getRateSetpointSource() const
+{
+	if (!_vehicle_control_mode.flag_control_rates_enabled) {
+		return RateSetpointSource::Disabled;
+	}
+
+	if (_vehicle_control_mode.flag_control_manual_enabled && !_vehicle_control_mode.flag_control_attitude_enabled) {
+		return RateSetpointSource::ManualRate;
+	}
+
+	if (_vehicle_control_mode.flag_control_position_enabled) {
+		return RateSetpointSource::Position;
+	}
+
+	if (_vehicle_control_mode.flag_control_velocity_enabled) {
+		return RateSetpointSource::Velocity;
+	}
+
+	if (_vehicle_control_mode.flag_control_altitude_enabled || _vehicle_control_mode.flag_control_climb_rate_enabled) {
+		return RateSetpointSource::Altitude;
+	}
+
+	if (_vehicle_control_mode.flag_control_attitude_enabled) {
+		return RateSetpointSource::Attitude;
+	}
+
+	return RateSetpointSource::Topic;
+}
+
 void
 MulticopterRateControl::parameters_updated()
 {
@@ -95,13 +125,25 @@ MulticopterRateControl::parameters_updated()
 
 	_rate_control.setControllerType(_param_mc_rate_ctrl_t.get());
 
-	_rate_control.setSmcGains(
-		Vector3f(_param_mc_smc_c_roll.get(), _param_mc_smc_c_pitch.get(), _param_mc_smc_c_yaw.get()),
-		Vector3f(_param_mc_smc_eta_roll.get(), _param_mc_smc_eta_pitch.get(), _param_mc_smc_eta_yaw.get()),
-		Vector3f(_param_mc_smc_bnd_roll.get(), _param_mc_smc_bnd_pitch.get(), _param_mc_smc_bnd_yaw.get()),
-		Vector3f(_param_mc_smc_ks_roll.get(), _param_mc_smc_ks_pitch.get(), _param_mc_smc_ks_yaw.get()),
-		Vector3f(_param_mc_smc_keq_roll.get(), _param_mc_smc_keq_pitch.get(), _param_mc_smc_keq_yaw.get())
+	_rate_control.setMpcGains(
+		Vector3f(_param_mc_mpc_j_roll.get(), _param_mc_mpc_j_pitch.get(), _param_mc_mpc_j_yaw.get()),
+		Vector3f(_param_mc_mpc_q_roll.get(), _param_mc_mpc_q_pitch.get(), _param_mc_mpc_q_yaw.get()),
+		Vector3f(_param_mc_mpc_eff_roll.get(), _param_mc_mpc_eff_pitch.get(), _param_mc_mpc_eff_yaw.get()),
+		Vector3f(_param_mc_mpc_r_roll.get(), _param_mc_mpc_r_pitch.get(), _param_mc_mpc_r_yaw.get()),
+		Vector3f(_param_mc_mpc_du_roll.get(), _param_mc_mpc_du_pitch.get(), _param_mc_mpc_du_yaw.get()),
+		_param_mc_mpc_horizon.get(),
+		_param_mc_mpc_slew.get()
 	);
+
+	_rate_control.setMpcIntegralGain(
+		Vector3f(_param_mc_mpc_i_roll.get(), _param_mc_mpc_i_pitch.get(), _param_mc_mpc_i_yaw.get()));
+
+	_rate_control.setMpcTorqueLimit(
+		Vector3f(_param_mc_mpc_tmax_roll.get(), _param_mc_mpc_tmax_pitch.get(), _param_mc_mpc_tmax_yaw.get()));
+
+	_rate_control.setMpcRateSetpointDerivativeLimit(_param_mc_mpc_rate_sp_deriv_lim.get());
+
+	_rate_control.setMpcGyroCompensation(_param_mc_mpc_gyro.get());
 
 	_rate_control.setModelBasedSmcGains(
 		Vector3f(_param_mc_msmc_j_roll.get(), _param_mc_msmc_j_pitch.get(), _param_mc_msmc_j_yaw.get()),
@@ -158,6 +200,18 @@ MulticopterRateControl::Run()
 
 		/* check for updates in other topics */
 		_vehicle_control_mode_sub.update(&_vehicle_control_mode);
+		_vehicle_status_sub.update(&_vehicle_status);
+
+		const RateSetpointSource rate_setpoint_source = getRateSetpointSource();
+
+		if (!_rate_setpoint_context_valid
+		    || _rate_setpoint_source != rate_setpoint_source
+		    || _rate_setpoint_nav_state != _vehicle_status.nav_state) {
+			_rate_control.resetModelBasedSmcSetpoint();
+			_rate_setpoint_source = rate_setpoint_source;
+			_rate_setpoint_nav_state = _vehicle_status.nav_state;
+			_rate_setpoint_context_valid = true;
+		}
 
 		if (_vehicle_land_detected_sub.updated()) {
 			vehicle_land_detected_s vehicle_land_detected;
@@ -167,8 +221,6 @@ MulticopterRateControl::Run()
 				_maybe_landed = vehicle_land_detected.maybe_landed;
 			}
 		}
-
-		_vehicle_status_sub.update(&_vehicle_status);
 
 		// use rates setpoint topic
 		vehicle_rates_setpoint_s vehicle_rates_setpoint{};
@@ -219,6 +271,9 @@ MulticopterRateControl::Run()
 			if (_control_allocator_status_sub.update(&control_allocator_status)) {
 				Vector<bool, 3> saturation_positive;
 				Vector<bool, 3> saturation_negative;
+
+				saturation_positive.zero();
+				saturation_negative.zero();
 
 				if (!control_allocator_status.torque_setpoint_achieved) {
 					for (size_t i = 0; i < 3; i++) {
@@ -284,6 +339,8 @@ MulticopterRateControl::Run()
 
 			updateActuatorControlsStatus(vehicle_torque_setpoint, dt);
 
+		} else {
+			_rate_control.resetModelBasedSmcSetpoint();
 		}
 	}
 

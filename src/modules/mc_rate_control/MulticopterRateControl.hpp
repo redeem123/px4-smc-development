@@ -82,7 +82,19 @@ public:
 	bool init();
 
 private:
+	enum class RateSetpointSource {
+		Unknown,
+		Disabled,
+		ManualRate,
+		Position,
+		Velocity,
+		Altitude,
+		Attitude,
+		Topic
+	};
+
 	void Run() override;
+	RateSetpointSource getRateSetpointSource() const;
 
 	/**
 	 * initialize some vectors/matrices from parameters
@@ -92,6 +104,9 @@ private:
 	void updateActuatorControlsStatus(const vehicle_torque_setpoint_s &vehicle_torque_setpoint, float dt);
 
 	RateControl _rate_control; ///< class for rate control calculations
+	RateSetpointSource _rate_setpoint_source{RateSetpointSource::Unknown};
+	uint8_t _rate_setpoint_nav_state{0};
+	bool _rate_setpoint_context_valid{false};
 
 	uORB::Subscription _battery_status_sub{ORB_ID(battery_status)};
 	uORB::Subscription _control_allocator_status_sub{ORB_ID(control_allocator_status)};
@@ -168,25 +183,38 @@ private:
 
 		(ParamInt<px4::params::MC_RATE_CTRL_T>) _param_mc_rate_ctrl_t,
 
-		(ParamFloat<px4::params::MC_SMC_C_R>) _param_mc_smc_c_roll,
-		(ParamFloat<px4::params::MC_SMC_C_P>) _param_mc_smc_c_pitch,
-		(ParamFloat<px4::params::MC_SMC_C_Y>) _param_mc_smc_c_yaw,
+		(ParamFloat<px4::params::MC_MPC_J_R>) _param_mc_mpc_j_roll,
+		(ParamFloat<px4::params::MC_MPC_J_P>) _param_mc_mpc_j_pitch,
+		(ParamFloat<px4::params::MC_MPC_J_Y>) _param_mc_mpc_j_yaw,
 
-		(ParamFloat<px4::params::MC_SMC_ETA_R>) _param_mc_smc_eta_roll,
-		(ParamFloat<px4::params::MC_SMC_ETA_P>) _param_mc_smc_eta_pitch,
-		(ParamFloat<px4::params::MC_SMC_ETA_Y>) _param_mc_smc_eta_yaw,
+		(ParamFloat<px4::params::MC_MPC_EFF_R>) _param_mc_mpc_eff_roll,
+		(ParamFloat<px4::params::MC_MPC_EFF_P>) _param_mc_mpc_eff_pitch,
+		(ParamFloat<px4::params::MC_MPC_EFF_Y>) _param_mc_mpc_eff_yaw,
 
-		(ParamFloat<px4::params::MC_SMC_BND_R>) _param_mc_smc_bnd_roll,
-		(ParamFloat<px4::params::MC_SMC_BND_P>) _param_mc_smc_bnd_pitch,
-		(ParamFloat<px4::params::MC_SMC_BND_Y>) _param_mc_smc_bnd_yaw,
+		(ParamFloat<px4::params::MC_MPC_Q_R>) _param_mc_mpc_q_roll,
+		(ParamFloat<px4::params::MC_MPC_Q_P>) _param_mc_mpc_q_pitch,
+		(ParamFloat<px4::params::MC_MPC_Q_Y>) _param_mc_mpc_q_yaw,
 
-		(ParamFloat<px4::params::MC_SMC_KS_R>) _param_mc_smc_ks_roll,
-		(ParamFloat<px4::params::MC_SMC_KS_P>) _param_mc_smc_ks_pitch,
-		(ParamFloat<px4::params::MC_SMC_KS_Y>) _param_mc_smc_ks_yaw,
+		(ParamFloat<px4::params::MC_MPC_R_R>) _param_mc_mpc_r_roll,
+		(ParamFloat<px4::params::MC_MPC_R_P>) _param_mc_mpc_r_pitch,
+		(ParamFloat<px4::params::MC_MPC_R_Y>) _param_mc_mpc_r_yaw,
 
-		(ParamFloat<px4::params::MC_SMC_KEQ_R>) _param_mc_smc_keq_roll,
-		(ParamFloat<px4::params::MC_SMC_KEQ_P>) _param_mc_smc_keq_pitch,
-		(ParamFloat<px4::params::MC_SMC_KEQ_Y>) _param_mc_smc_keq_yaw,
+		(ParamFloat<px4::params::MC_MPC_DU_R>) _param_mc_mpc_du_roll,
+		(ParamFloat<px4::params::MC_MPC_DU_P>) _param_mc_mpc_du_pitch,
+		(ParamFloat<px4::params::MC_MPC_DU_Y>) _param_mc_mpc_du_yaw,
+
+		(ParamFloat<px4::params::MC_MPC_I_R>) _param_mc_mpc_i_roll,
+		(ParamFloat<px4::params::MC_MPC_I_P>) _param_mc_mpc_i_pitch,
+		(ParamFloat<px4::params::MC_MPC_I_Y>) _param_mc_mpc_i_yaw,
+
+		(ParamFloat<px4::params::MC_MPC_TMAX_R>) _param_mc_mpc_tmax_roll,
+		(ParamFloat<px4::params::MC_MPC_TMAX_P>) _param_mc_mpc_tmax_pitch,
+		(ParamFloat<px4::params::MC_MPC_TMAX_Y>) _param_mc_mpc_tmax_yaw,
+
+		(ParamInt<px4::params::MC_MPC_HORIZON>) _param_mc_mpc_horizon,
+		(ParamFloat<px4::params::MC_MPC_SLEW>) _param_mc_mpc_slew,
+		(ParamFloat<px4::params::MC_MPC_RSPD_L>) _param_mc_mpc_rate_sp_deriv_lim,
+		(ParamFloat<px4::params::MC_MPC_GYRO>) _param_mc_mpc_gyro,
 
 		(ParamFloat<px4::params::MC_MSMC_J_R>) _param_mc_msmc_j_roll,
 		(ParamFloat<px4::params::MC_MSMC_J_P>) _param_mc_msmc_j_pitch,

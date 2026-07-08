@@ -309,6 +309,7 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 			_signal_filter.reset(0.f);
 			_gains_backup_available = false;
 			_msmc_rate_sp_derivative_limit = 0.f;
+			_msmc_rate_sp_derivative_enabled = _param_mc_msmc_rate_sp_deriv_lim.get() > FLT_EPSILON;
 		}
 
 		break;
@@ -497,7 +498,8 @@ void McAutotuneAttitudeControl::updateStateMachine(hrt_abstime now)
 	const bool timeout = (now - _state_start_time) > 20_s;
 	const bool mode_changed = (_start_flight_mode != _nav_state);
 	const bool pilot_intervention = ((fabsf(manual_control_setpoint.roll) > 0.05f)
-					 || (fabsf(manual_control_setpoint.pitch) > 0.05f));
+					 || (fabsf(manual_control_setpoint.pitch) > 0.05f)
+					 || (fabsf(manual_control_setpoint.yaw) > 0.05f));
 
 	const bool should_abort = timeout || mode_changed || pilot_intervention;
 
@@ -653,8 +655,10 @@ void McAutotuneAttitudeControl::copyModelBasedSmcGains(int index)
 		_msmc_bnd(index) = (index == 2) ? 0.30f : 0.25f;
 		_msmc_ks(index) = math::constrain(0.06f * _msmc_c(index), 0.005f, 0.12f);
 
-		const float rate_sp_derivative_limit = math::constrain(1.4f / math::max(desired_rise_time, 0.05f), 3.f, 20.f);
-		_msmc_rate_sp_derivative_limit = math::max(_msmc_rate_sp_derivative_limit, rate_sp_derivative_limit);
+		if (_msmc_rate_sp_derivative_enabled) {
+			const float rate_sp_derivative_limit = math::constrain(1.4f / math::max(desired_rise_time, 0.05f), 3.f, 20.f);
+			_msmc_rate_sp_derivative_limit = math::max(_msmc_rate_sp_derivative_limit, rate_sp_derivative_limit);
+		}
 	}
 }
 
@@ -672,7 +676,8 @@ bool McAutotuneAttitudeControl::areModelBasedSmcGainsGood() const
 				  && _msmc_eta.min() > 0.f
 				  && _msmc_bnd.min() > 0.f
 				  && _msmc_ks.min() > 0.f
-				  && _msmc_rate_sp_derivative_limit > 0.f;
+				  && (_msmc_rate_sp_derivative_enabled ? _msmc_rate_sp_derivative_limit > 0.f :
+				      _msmc_rate_sp_derivative_limit >= 0.f);
 
 	const bool are_small_enough = _msmc_j.max() <= 0.2f
 				      && _msmc_c.max() <= 1.5f
