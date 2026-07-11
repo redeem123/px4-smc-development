@@ -281,6 +281,7 @@ public:
 	int get_loiter_min_alt() const { return _param_min_ltr_alt.get(); }
 	int get_landing_abort_min_alt() const { return _param_mis_lnd_abrt_alt.get(); }
 	float get_param_mis_takeoff_alt() const { return _param_mis_takeoff_alt.get(); }
+	float get_param_mis_takeoff_alt_max() const { return _param_mis_takeoff_alt_max.get(); }
 	float get_yaw_timeout() const { return _param_mis_yaw_tmt.get(); }
 	float get_yaw_threshold() const { return math::radians(_param_mis_yaw_err.get()); }
 	float get_nav_min_gnd_dist_param() const { return _param_nav_min_gnd_dist.get(); }
@@ -455,6 +456,7 @@ private:
 
 		// non-navigator parameters: Mission (MIS_*)
 		(ParamFloat<px4::params::MIS_TAKEOFF_ALT>)    _param_mis_takeoff_alt,
+		(ParamFloat<px4::params::MIS_TKO_ALT_MAX>)    _param_mis_takeoff_alt_max,
 		(ParamFloat<px4::params::MIS_YAW_TMT>)        _param_mis_yaw_tmt,
 		(ParamFloat<px4::params::MIS_YAW_ERR>)        _param_mis_yaw_err,
 		(ParamInt<px4::params::MIS_LND_ABRT_ALT>)     _param_mis_lnd_abrt_alt,

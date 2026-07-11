@@ -6,6 +6,7 @@
 #
 
 PX4_SIM_MODEL=${PX4_SIM_MODEL:=x500_flow}
+PX4_GZ_WORLD=${PX4_GZ_WORLD:=aruco}
 
 . ${R}etc/init.d-posix/airframes/4001_gz_x500
 
@@ -13,3 +14,4 @@ echo "Disabling Sim GPS"
 param set-default SYS_HAS_GPS 0
 param set-default SIM_GPS_USED 0
 param set-default EKF2_GPS_CTRL 0
+param set-default MIS_TKO_ALT_MAX 1.0

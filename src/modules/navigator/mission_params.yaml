@@ -14,6 +14,20 @@ parameters:
       min: 0
       decimal: 1
       increment: 0.5
+    MIS_TKO_ALT_MAX:
+      description:
+        short: Maximum commanded multicopter takeoff altitude
+        long: |-
+          Optional relative-altitude ceiling for multicopter takeoff commands such as
+          Takeoff from QGroundControl. Set to 0 to disable the ceiling. This does not
+          change mission-item altitudes or fixed-wing takeoff behavior.
+      type: float
+      default: 0.0
+      unit: m
+      min: 0.0
+      max: 100.0
+      decimal: 1
+      increment: 0.5
     MIS_TKO_LAND_REQ:
       description:
         short: Mission takeoff/landing required
