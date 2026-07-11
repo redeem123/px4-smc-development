@@ -226,11 +226,19 @@ initial hypotheses for the real vehicle until measured.
   `11_39_30` and optical-flow/range log `11_41_04` passed all acceptance gates.
   Their terminal roll/pitch oscillation RMS maxima were `0.0244/0.0265 rad/s`,
   with terminal rate-error RMS maxima `0.0367/0.0663 rad/s`.
-- The reduced roll/pitch candidate has not yet been written to the Pixhawk. The
-  direct USB device disappeared, and the telemetry adapter produced no MAVLink
-  heartbeat when opened independently. The installed roll/pitch card therefore
-  remains unsafe for another SMC flight until live write/readback and a props-off
-  response check complete.
+- The reduced roll/pitch card is installed and persisted on the Pixhawk. The
+  independently decoded post-reboot backup is
+  `tmp_mpc_logs/pixhawk_params_after_rp_reduction_verified_2026-07-11_18-59-34.json`.
+  It confirms `MC_RATE_CTRL_T=2`, `MC_MSMC_CFG=1`, and all 24 floating-point
+  card values after reboot. Runtime `rate_ctrl_status` reports
+  `controller_type=2` and `model_valid=true`.
+- The installed card's local SMC/PID gain ratios are `0.667/0.667/1.250` and
+  pass the configured `0.5-1.5` sanity envelope. A read-only telemetry sample
+  was disarmed and landed with no enabled-sensor health fault, local horizontal
+  speed `0.0012 m/s`, optical-flow quality `100-116`, and range `0.063 m`.
+  No flight battery was connected, so no arm or motor command was attempted.
+  A charged-battery, props-off response check remains required before another
+  SMC flight.
 - The real 4S battery fell to `13.13 V`, reported emergency warning level, and
   spent `62/162` airborne battery samples at warning level 3. Recharge or
   replace it before any further motor run. The next test must be the originally
