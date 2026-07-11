@@ -118,3 +118,6 @@ _emscripten_sdk/
 
 # Claude Code local settings
 .claude/
+
+# Local SMC flight logs and generated reports
+/tmp_smc_logs/

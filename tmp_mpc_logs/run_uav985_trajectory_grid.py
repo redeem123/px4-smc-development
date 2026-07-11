@@ -57,36 +57,27 @@ def remove_persistent_params():
 
 
 def stop_process_group(process):
-    if process.poll() is not None:
-        return
+    if process.poll() is None:
+        try:
+            if process.stdin:
+                process.stdin.write("shutdown\n")
+                process.stdin.flush()
+            process.wait(timeout=20)
 
-    try:
-        if process.stdin:
-            process.stdin.write("shutdown\n")
-            process.stdin.flush()
-        process.wait(timeout=20)
-        return
+        except (BrokenPipeError, subprocess.TimeoutExpired):
+            pass
 
-    except (BrokenPipeError, subprocess.TimeoutExpired):
-        pass
-
-    for sig in (signal.SIGINT, signal.SIGTERM):
-        if process.poll() is not None:
-            return
-
+    # Gazebo can outlive the make/PX4 process while remaining in its process
+    # group, so clean the group even after the foreground process exits.
+    for sig, delay in ((signal.SIGTERM, 2.0), (signal.SIGKILL, 0.5)):
         try:
             os.killpg(process.pid, sig)
         except ProcessLookupError:
             return
 
-        try:
-            process.wait(timeout=8)
-            return
-        except subprocess.TimeoutExpired:
-            continue
+        time.sleep(delay)
 
     if process.poll() is None:
-        os.killpg(process.pid, signal.SIGKILL)
         process.wait(timeout=5)
 
 
@@ -105,10 +96,11 @@ def run_one(config, args):
 
     env = os.environ.copy()
     env["PX4_GZ_HEADLESS"] = "1"
+    env["PX4_PARAM_MC_RATE_CTRL_T"] = str(args.controller)
 
-    print(f"\n== start {config.tag}", flush=True)
+    print(f"\n== start target={args.sitl_target} controller={args.controller} {config.tag}", flush=True)
     sitl = subprocess.Popen(
-        ["make", "px4_sitl", "gz_uav985"],
+        ["make", "px4_sitl", args.sitl_target],
         cwd=ROOT,
         env=env,
         stdin=subprocess.PIPE,
@@ -138,6 +130,13 @@ def run_one(config, args):
             "--accel-ff",
             "--accel-scale",
             str(config.accel_scale),
+            "--yaw-step-deg",
+            str(args.yaw_step_deg),
+            "--yaw-hold",
+            str(args.yaw_hold),
+            "--sitl-ok",
+            "--expected-controller",
+            str(args.controller),
         ]
         run_command(flight_command, check=True)
 
@@ -145,7 +144,8 @@ def run_one(config, args):
         stop_process_group(sitl)
 
     source_log = latest_ulog(start_time)
-    destination = OUTPUT_DIR / f"uav985_mpc_grid_{config.tag}_{source_log.stem}.ulg"
+    model_tag = args.sitl_target.removeprefix("gz_")
+    destination = OUTPUT_DIR / f"{model_tag}_ctrl{args.controller}_grid_{config.tag}_{source_log.stem}.ulg"
     shutil.copy2(source_log, destination)
     print(f"log={destination}", flush=True)
 
@@ -163,6 +163,10 @@ def run_one(config, args):
         str(args.side),
         "--altitude",
         str(args.altitude),
+        "--yaw-step-deg",
+        str(args.yaw_step_deg),
+        "--yaw-hold",
+        str(args.yaw_hold),
         str(destination),
     ]
     run_command(analyze_command, check=True)
@@ -182,7 +186,11 @@ def main():
     parser.add_argument("--takeoff-hold", type=float, default=7.0)
     parser.add_argument("--side", type=float, default=0.6)
     parser.add_argument("--altitude", type=float, default=2.0)
+    parser.add_argument("--yaw-step-deg", type=float, default=0.0)
+    parser.add_argument("--yaw-hold", type=float, default=3.0)
     parser.add_argument("--startup-wait", type=float, default=35.0)
+    parser.add_argument("--controller", type=int, choices=(1, 2), default=1)
+    parser.add_argument("--sitl-target", choices=("gz_uav985", "gz_uav985_flow"), default="gz_uav985")
     args = parser.parse_args()
 
     configs = args.config or [

@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 import argparse
 import math
+import struct
 import time
 
 from pymavlink import mavutil
@@ -74,6 +75,57 @@ def latest_position(master, timeout=0.05):
     return latest
 
 
+def current_yaw(master, timeout=3.0):
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(type="ATTITUDE", blocking=True, timeout=0.5)
+
+        if msg is not None and math.isfinite(msg.yaw):
+            return float(msg.yaw)
+
+    raise RuntimeError("timeout waiting for initial attitude yaw")
+
+
+def current_position(master, timeout=3.0):
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(type="LOCAL_POSITION_NED", blocking=True, timeout=0.5)
+
+        if msg is not None:
+            position = (float(msg.x), float(msg.y), float(msg.z))
+
+            if all(math.isfinite(value) for value in position):
+                return position
+
+    raise RuntimeError("timeout waiting for a finite local position")
+
+
+def read_parameter(master, name, timeout=3.0):
+    master.param_fetch_one(name)
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(type="PARAM_VALUE", blocking=True, timeout=0.5)
+
+        if msg is None:
+            continue
+
+        parameter_name = msg.param_id.decode("ascii").rstrip("\x00") if isinstance(msg.param_id, bytes) else msg.param_id
+
+        if parameter_name == name and math.isfinite(msg.param_value):
+            if msg.param_type == mavutil.mavlink.MAV_PARAM_TYPE_REAL32:
+                return float(msg.param_value)
+
+            if msg.param_type == mavutil.mavlink.MAV_PARAM_TYPE_INT32:
+                return float(struct.unpack("<i", struct.pack("<f", msg.param_value))[0])
+
+            raise RuntimeError(f"unsupported MAVLink parameter type {msg.param_type} for {name}")
+
+    raise RuntimeError(f"timeout reading parameter {name}")
+
+
 def command_long(master, command, params, label, timeout=5.0):
     mavlink_params = [float(param) for param in params]
     master.mav.command_long_send(
@@ -91,6 +143,13 @@ def command_long(master, command, params, label, timeout=5.0):
 
         if msg is not None and msg.command == command:
             print(f"{label} -> ack command={msg.command} result={msg.result}", flush=True)
+
+            if msg.result not in (
+                mavutil.mavlink.MAV_RESULT_ACCEPTED,
+                mavutil.mavlink.MAV_RESULT_IN_PROGRESS,
+            ):
+                raise RuntimeError(f"{label} rejected with MAV_RESULT={msg.result}")
+
             return msg.result
 
     raise RuntimeError(f"timeout waiting for {label} ack")
@@ -116,6 +175,13 @@ def set_mode(master, mode_name):
 
         if msg is not None and msg.command == mavutil.mavlink.MAV_CMD_DO_SET_MODE:
             print(f"setting {mode_name} -> ack command={msg.command} result={msg.result}", flush=True)
+
+            if msg.result not in (
+                mavutil.mavlink.MAV_RESULT_ACCEPTED,
+                mavutil.mavlink.MAV_RESULT_IN_PROGRESS,
+            ):
+                raise RuntimeError(f"setting {mode_name} rejected with MAV_RESULT={msg.result}")
+
             return msg.result
 
     raise RuntimeError(f"timeout waiting for setting {mode_name} ack")
@@ -130,17 +196,33 @@ def arm(master):
     )
 
 
+def wait_armed(master, timeout=5.0):
+    deadline = time.monotonic() + timeout
+
+    while time.monotonic() < deadline:
+        msg = master.recv_match(type="HEARTBEAT", blocking=True, timeout=0.5)
+
+        if msg is not None and msg.base_mode & mavutil.mavlink.MAV_MODE_FLAG_SAFETY_ARMED:
+            return
+
+    raise RuntimeError("arming was acknowledged but armed state was not observed")
+
+
 def distance(position, target):
     return math.sqrt(sum((a - b) * (a - b) for a, b in zip(position, target)))
 
 
-def square_waypoints(side_m, altitude_m):
-    z = -altitude_m
+def wrap_angle(angle):
+    return math.atan2(math.sin(angle), math.cos(angle))
+
+
+def square_waypoints(side_m, hover_home):
+    x, y, z = hover_home
     return [
-        ("east", (side_m, 0.0, z)),
-        ("north", (side_m, side_m, z)),
-        ("west", (0.0, side_m, z)),
-        ("home", (0.0, 0.0, z)),
+        ("east", (x + side_m, y, z)),
+        ("north", (x + side_m, y + side_m, z)),
+        ("west", (x, y + side_m, z)),
+        ("home", hover_home),
     ]
 
 
@@ -165,14 +247,14 @@ def blend(start, target, elapsed, duration):
     return position, velocity, acceleration
 
 
-def hold_waypoint(master, name, target, hold_s, acceleration_feedforward=False):
+def hold_waypoint(master, name, target, hold_s, yaw, acceleration_feedforward=False):
     print(f"hold {name}:", flush=True)
     start_time = time.monotonic()
     last_print = 0.0
     last_pos = None
 
     while time.monotonic() - start_time < hold_s:
-        send_trajectory(master, target, acceleration_feedforward=acceleration_feedforward)
+        send_trajectory(master, target, yaw=yaw, acceleration_feedforward=acceleration_feedforward)
         pos = latest_position(master)
 
         if pos is not None:
@@ -205,6 +287,7 @@ def move_smooth(
     end_target,
     move_s,
     hold_s,
+    yaw,
     acceleration_feedforward=False,
     acceleration_scale=1.0,
 ):
@@ -222,6 +305,7 @@ def move_smooth(
             position_sp,
             velocity_sp,
             acceleration_sp,
+            yaw=yaw,
             acceleration_feedforward=acceleration_feedforward,
         )
         pos = latest_position(master)
@@ -240,7 +324,7 @@ def move_smooth(
 
         time.sleep(0.05)
 
-    hold_waypoint(master, name, end_target, hold_s, acceleration_feedforward=acceleration_feedforward)
+    hold_waypoint(master, name, end_target, hold_s, yaw, acceleration_feedforward=acceleration_feedforward)
 
     if last_pos is None:
         print(f"  move/hold done {name}: no local position", flush=True)
@@ -294,49 +378,139 @@ def main():
     parser.add_argument("--no-accel-ff", dest="accel_ff", action="store_false")
     parser.set_defaults(accel_ff=True)
     parser.add_argument("--accel-scale", type=float, default=0.75)
+    parser.add_argument("--yaw-step-deg", type=float, default=0.0)
+    parser.add_argument("--yaw-hold", type=float, default=3.0)
+    parser.add_argument("--sitl-ok", action="store_true")
     parser.add_argument("--real-flight-ok", action="store_true")
+    parser.add_argument("--expected-controller", type=int, choices=(0, 1, 2))
     args = parser.parse_args()
 
-    if not args.real_flight_ok and not looks_like_sitl_connection(args.connection):
-        raise RuntimeError("refusing to arm a non-SITL connection without --real-flight-ok")
+    if args.sitl_ok == args.real_flight_ok:
+        raise RuntimeError("select exactly one authorization: --sitl-ok or --real-flight-ok")
+
+    if args.sitl_ok and not looks_like_sitl_connection(args.connection):
+        raise RuntimeError("--sitl-ok is only valid for an explicit localhost connection")
+
+    if args.real_flight_ok and args.expected_controller is None:
+        raise RuntimeError("real flight requires --expected-controller 0, 1, or 2")
+
+    if args.altitude <= 0.0 or args.side <= 0.0 or args.move <= 0.0 or args.hold <= 0.0:
+        raise ValueError("altitude, side, move, and hold must be positive")
+
+    if not 0.0 <= args.yaw_step_deg <= 90.0 or args.yaw_hold <= 0.0:
+        raise ValueError("yaw step must be between 0 and 90 degrees and yaw hold must be positive")
+
+    if args.real_flight_ok and (
+        args.altitude > 1.0 or args.side > 0.5 or args.yaw_step_deg > 15.0
+    ):
+        raise RuntimeError("real-flight authorization is limited to 1m altitude, 0.5m side, and 15deg yaw steps")
 
     master = mavutil.mavlink_connection(args.connection, baud=args.baud)
-    master.wait_heartbeat(timeout=10)
+    if master.wait_heartbeat(timeout=10) is None:
+        raise RuntimeError("timeout waiting for MAVLink heartbeat")
+
     print(f"heartbeat target_system={master.target_system} target_component={master.target_component}", flush=True)
 
     set_message_interval(master, mavutil.mavlink.MAVLINK_MSG_ID_LOCAL_POSITION_NED, 50)
     set_message_interval(master, mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE, 10)
+    set_message_interval(master, mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 20)
 
-    takeoff = (0.0, 0.0, -args.altitude)
+    if args.expected_controller is not None:
+        controller = read_parameter(master, "MC_RATE_CTRL_T")
+
+        if not math.isclose(controller, args.expected_controller, abs_tol=0.01):
+            raise RuntimeError(
+                f"MC_RATE_CTRL_T={controller:g}, expected controller {args.expected_controller}"
+            )
+
+        print(f"verified MC_RATE_CTRL_T={controller:g}", flush=True)
+
+        if args.expected_controller == 2:
+            configuration = read_parameter(master, "MC_MSMC_CFG")
+
+            if not math.isclose(configuration, 1.0, abs_tol=0.01):
+                raise RuntimeError(f"MC_MSMC_CFG={configuration:g}, expected acknowledged model card 1")
+
+            print("verified MC_MSMC_CFG=1", flush=True)
+
+    start_position = current_position(master)
+    yaw = current_yaw(master)
+    print(
+        f"relative start=({start_position[0]:.2f},{start_position[1]:.2f},{start_position[2]:.2f})",
+        flush=True,
+    )
+    print(f"holding initial yaw={math.degrees(yaw):.1f}deg", flush=True)
+
+    takeoff = (start_position[0], start_position[1], start_position[2] - args.altitude)
 
     for _ in range(30):
-        send_trajectory(master, takeoff, acceleration_feedforward=args.accel_ff)
+        send_trajectory(master, takeoff, yaw=yaw, acceleration_feedforward=args.accel_ff)
         time.sleep(0.05)
 
-    set_mode(master, "OFFBOARD")
-    arm(master)
+    armed = False
+    landed = False
 
-    hold_waypoint(master, "takeoff/settle", takeoff, args.takeoff_hold, acceleration_feedforward=args.accel_ff)
+    try:
+        set_mode(master, "OFFBOARD")
+        arm(master)
+        armed = True
+        wait_armed(master)
 
-    current = takeoff
+        hold_waypoint(master, "takeoff/settle", takeoff, args.takeoff_hold, yaw,
+                      acceleration_feedforward=args.accel_ff)
 
-    for name, target in square_waypoints(args.side, args.altitude):
-        move_smooth(
-            master,
-            name,
-            current,
-            target,
-            args.move,
-            args.hold,
-            acceleration_feedforward=args.accel_ff,
-            acceleration_scale=args.accel_scale,
-        )
-        current = target
+        current = takeoff
 
-    print("switching LAND", flush=True)
-    set_mode(master, "LAND")
-    wait_landed(master)
-    print("smooth flight script done", flush=True)
+        for name, target in square_waypoints(args.side, takeoff):
+            move_smooth(
+                master,
+                name,
+                current,
+                target,
+                args.move,
+                args.hold,
+                yaw,
+                acceleration_feedforward=args.accel_ff,
+                acceleration_scale=args.accel_scale,
+            )
+            current = target
+
+        if args.yaw_step_deg > 0.0:
+            yaw_step = math.radians(args.yaw_step_deg)
+            yaw_targets = (
+                ("yaw_positive", wrap_angle(yaw + yaw_step)),
+                ("yaw_negative", wrap_angle(yaw - yaw_step)),
+                ("yaw_home", yaw),
+            )
+
+            for name, yaw_target in yaw_targets:
+                print(f"yaw target {name}={math.degrees(yaw_target):.1f}deg", flush=True)
+                hold_waypoint(
+                    master,
+                    name,
+                    takeoff,
+                    args.yaw_hold,
+                    yaw_target,
+                    acceleration_feedforward=args.accel_ff,
+                )
+
+        print("switching LAND", flush=True)
+        set_mode(master, "LAND")
+        wait_landed(master)
+        landed = True
+        print("smooth flight script done", flush=True)
+
+    finally:
+        if armed and not landed:
+            print("flight interrupted after arming; requesting LAND", flush=True)
+
+            try:
+                set_mode(master, "LAND")
+                wait_landed(master)
+                landed = True
+
+            except Exception as error:
+                print(f"LAND request failed: {error}", flush=True)
 
 
 if __name__ == "__main__":

@@ -1,2 +1,4 @@
 *.ulg
 __pycache__/
+pixhawk_params_*.json
+rootfs_param_backup*/
