@@ -198,8 +198,11 @@ initial hypotheses for the real vehicle until measured.
 
 - Log `08_28_00` ran mode 2 with `model_valid=true` for `38.9 s` armed and
   `32.6 s` detected airborne. Vertical span was `0.338 m`.
-- Roll and pitch remained bounded: maximum absolute attitude was `2.33/1.73
-  deg`, rate-error RMS was `0.092/0.090 rad/s`, and neither SMC axis clipped.
+- Whole-flight attitude averages hid a terminal instability. Maximum absolute
+  attitude was only `2.33/1.73 deg` and neither SMC axis clipped, but the final
+  six airborne seconds had roll/pitch rate-error RMS `0.177/0.155 rad/s` and
+  high-frequency rate RMS `0.115/0.102 rad/s`. Dominant peaks at `4.82/4.65 Hz`
+  confirm the pilot-observed growing roll/pitch oscillation before disarm.
 - Yaw was not acceptable. With centered yaw input, the vehicle accumulated
   approximately `120 deg` heading excursion; yaw rate-error RMS was
   `0.354 rad/s` and SMC yaw torque reached `0.0854` of the `0.10` limit.
@@ -215,7 +218,19 @@ initial hypotheses for the real vehicle until measured.
 - The `EFF_Y=0.8` card passed exact-state log `08_38_17` and optical-flow/range
   log `08_39_50`. Worst simulated yaw settling was `0.84 s`; internal yaw-limit
   occupancy remained <= `1.63%`, with no failsafe, allocator miss, or motor
-  saturation.
+  saturation. This yaw-only correction does not clear the roll/pitch failure.
+- A reduced roll/pitch candidate changes `C_R/P` from `3.0` to `2.0`,
+  `ETA_R/P` from `5.0` to `3.5`, and `KS_R/P` from `2.0` to `1.0`. It lowers
+  the local roll/pitch normalized-torque slope from `0.15` to `0.10` without
+  changing `TMAX`, LPF, slew limit, or the `EFF_Y=0.8` yaw card. Exact-state log
+  `11_39_30` and optical-flow/range log `11_41_04` passed all acceptance gates.
+  Their terminal roll/pitch oscillation RMS maxima were `0.0244/0.0265 rad/s`,
+  with terminal rate-error RMS maxima `0.0367/0.0663 rad/s`.
+- The reduced roll/pitch candidate has not yet been written to the Pixhawk. The
+  direct USB device disappeared, and the telemetry adapter produced no MAVLink
+  heartbeat when opened independently. The installed roll/pitch card therefore
+  remains unsafe for another SMC flight until live write/readback and a props-off
+  response check complete.
 - The real 4S battery fell to `13.13 V`, reported emergency warning level, and
   spent `62/162` airborne battery samples at warning level 3. Recharge or
   replace it before any further motor run. The next test must be the originally
@@ -293,3 +308,15 @@ Land immediately for uncommanded yaw, growing rate/position error, persistent
 allocator miss, estimator reset, motor saturation, excessive vibration, or any
 pilot intervention. Analyze the ULog before another flight or any increase in
 trajectory size.
+
+The airborne health check is mandatory even when attitude angles and whole-flight
+averages appear bounded:
+
+```sh
+.venv/bin/python Tools/analyze_smc_flight.py flight.ulg
+```
+
+It evaluates every armed-airborne segment and fails on the final six-second
+roll/pitch window if high-frequency rate RMS exceeds `0.08 rad/s`, rate-error RMS
+exceeds `0.12 rad/s`, or oscillation growth exceeds `2.5x`. Log `08_28_00` fails
+both RMS limits on both axes; the two reduced-gain simulation logs pass.
