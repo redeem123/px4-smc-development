@@ -131,6 +131,7 @@ private:
 
 	bool _landed{true};
 	bool _maybe_landed{true};
+	bool _smc_configuration_valid{false};
 
 	hrt_abstime _last_run{0};
 
@@ -182,6 +183,7 @@ private:
 		(ParamBool<px4::params::MC_BAT_SCALE_EN>) _param_mc_bat_scale_en,
 
 		(ParamInt<px4::params::MC_RATE_CTRL_T>) _param_mc_rate_ctrl_t,
+		(ParamInt<px4::params::MC_MSMC_CFG>) _param_mc_msmc_cfg,
 
 		(ParamFloat<px4::params::MC_MPC_J_R>) _param_mc_mpc_j_roll,
 		(ParamFloat<px4::params::MC_MPC_J_P>) _param_mc_mpc_j_pitch,
@@ -206,6 +208,9 @@ private:
 		(ParamFloat<px4::params::MC_MPC_I_R>) _param_mc_mpc_i_roll,
 		(ParamFloat<px4::params::MC_MPC_I_P>) _param_mc_mpc_i_pitch,
 		(ParamFloat<px4::params::MC_MPC_I_Y>) _param_mc_mpc_i_yaw,
+		(ParamFloat<px4::params::MC_MPC_ILIM_R>) _param_mc_mpc_ilim_roll,
+		(ParamFloat<px4::params::MC_MPC_ILIM_P>) _param_mc_mpc_ilim_pitch,
+		(ParamFloat<px4::params::MC_MPC_ILIM_Y>) _param_mc_mpc_ilim_yaw,
 
 		(ParamFloat<px4::params::MC_MPC_TMAX_R>) _param_mc_mpc_tmax_roll,
 		(ParamFloat<px4::params::MC_MPC_TMAX_P>) _param_mc_mpc_tmax_pitch,
@@ -215,10 +220,14 @@ private:
 		(ParamFloat<px4::params::MC_MPC_SLEW>) _param_mc_mpc_slew,
 		(ParamFloat<px4::params::MC_MPC_RSPD_L>) _param_mc_mpc_rate_sp_deriv_lim,
 		(ParamFloat<px4::params::MC_MPC_GYRO>) _param_mc_mpc_gyro,
+		(ParamFloat<px4::params::MC_MPC_TAU>) _param_mc_mpc_tau,
 
 		(ParamFloat<px4::params::MC_MSMC_J_R>) _param_mc_msmc_j_roll,
 		(ParamFloat<px4::params::MC_MSMC_J_P>) _param_mc_msmc_j_pitch,
 		(ParamFloat<px4::params::MC_MSMC_J_Y>) _param_mc_msmc_j_yaw,
+		(ParamFloat<px4::params::MC_MSMC_EFF_R>) _param_mc_msmc_eff_roll,
+		(ParamFloat<px4::params::MC_MSMC_EFF_P>) _param_mc_msmc_eff_pitch,
+		(ParamFloat<px4::params::MC_MSMC_EFF_Y>) _param_mc_msmc_eff_yaw,
 
 		(ParamFloat<px4::params::MC_MSMC_C_R>) _param_mc_msmc_c_roll,
 		(ParamFloat<px4::params::MC_MSMC_C_P>) _param_mc_msmc_c_pitch,
@@ -236,6 +245,12 @@ private:
 		(ParamFloat<px4::params::MC_MSMC_KS_P>) _param_mc_msmc_ks_pitch,
 		(ParamFloat<px4::params::MC_MSMC_KS_Y>) _param_mc_msmc_ks_yaw,
 		(ParamFloat<px4::params::MC_MSMC_RSPD_L>) _param_mc_msmc_rate_sp_deriv_lim,
+		(ParamFloat<px4::params::MC_MSMC_ILIM_R>) _param_mc_msmc_ilim_roll,
+		(ParamFloat<px4::params::MC_MSMC_ILIM_P>) _param_mc_msmc_ilim_pitch,
+		(ParamFloat<px4::params::MC_MSMC_ILIM_Y>) _param_mc_msmc_ilim_yaw,
+		(ParamFloat<px4::params::MC_MSMC_TMAX_R>) _param_mc_msmc_tmax_roll,
+		(ParamFloat<px4::params::MC_MSMC_TMAX_P>) _param_mc_msmc_tmax_pitch,
+		(ParamFloat<px4::params::MC_MSMC_TMAX_Y>) _param_mc_msmc_tmax_yaw,
 
 		(ParamFloat<px4::params::MC_SMC_LPF>) _param_mc_smc_lpf,
 		(ParamFloat<px4::params::MC_SMC_SLEW>) _param_mc_smc_slew,

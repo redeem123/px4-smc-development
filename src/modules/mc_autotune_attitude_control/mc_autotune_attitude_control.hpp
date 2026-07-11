@@ -97,13 +97,6 @@ private:
 	bool areAllSmallerThan(const matrix::Vector<float, 5> &vect, float threshold) const;
 	void copyGains(int index);
 	bool areGainsGood() const;
-	bool tuningModelBasedSmc() const;
-	float getModelBasedSmcInputScale(int index) const;
-	void copyModelBasedSmcGains(int index);
-	bool areModelBasedSmcGainsGood() const;
-	void saveModelBasedSmcGainsToParams();
-	void backupAndSaveModelBasedSmcGainsToParams();
-	void revertModelBasedSmcParamGains();
 	void saveGainsToParams();
 	void backupAndSaveGainsToParams();
 	void revertParamGains();
@@ -158,14 +151,6 @@ private:
 	float _attitude_p{0.f};
 	matrix::Vector3f _att_p{};
 
-	matrix::Vector3f _msmc_j{};
-	matrix::Vector3f _msmc_c{};
-	matrix::Vector3f _msmc_eta{};
-	matrix::Vector3f _msmc_bnd{};
-	matrix::Vector3f _msmc_ks{};
-	float _msmc_rate_sp_derivative_limit{0.f};
-	bool _msmc_rate_sp_derivative_enabled{true};
-
 	matrix::Vector3f _control_power{};
 
 	bool _gains_backup_available{false}; // true if a backup of the parameters has been done
@@ -219,28 +204,7 @@ private:
 		(ParamFloat<px4::params::MC_YAWRATE_K>) _param_mc_yawrate_k,
 		(ParamFloat<px4::params::MC_YAWRATE_I>) _param_mc_yawrate_i,
 		(ParamFloat<px4::params::MC_YAWRATE_D>) _param_mc_yawrate_d,
-		(ParamFloat<px4::params::MC_YAW_P>) _param_mc_yaw_p,
-
-		(ParamFloat<px4::params::MC_MSMC_J_R>) _param_mc_msmc_j_roll,
-		(ParamFloat<px4::params::MC_MSMC_J_P>) _param_mc_msmc_j_pitch,
-		(ParamFloat<px4::params::MC_MSMC_J_Y>) _param_mc_msmc_j_yaw,
-
-		(ParamFloat<px4::params::MC_MSMC_C_R>) _param_mc_msmc_c_roll,
-		(ParamFloat<px4::params::MC_MSMC_C_P>) _param_mc_msmc_c_pitch,
-		(ParamFloat<px4::params::MC_MSMC_C_Y>) _param_mc_msmc_c_yaw,
-
-		(ParamFloat<px4::params::MC_MSMC_ETA_R>) _param_mc_msmc_eta_roll,
-		(ParamFloat<px4::params::MC_MSMC_ETA_P>) _param_mc_msmc_eta_pitch,
-		(ParamFloat<px4::params::MC_MSMC_ETA_Y>) _param_mc_msmc_eta_yaw,
-
-		(ParamFloat<px4::params::MC_MSMC_BND_R>) _param_mc_msmc_bnd_roll,
-		(ParamFloat<px4::params::MC_MSMC_BND_P>) _param_mc_msmc_bnd_pitch,
-		(ParamFloat<px4::params::MC_MSMC_BND_Y>) _param_mc_msmc_bnd_yaw,
-
-		(ParamFloat<px4::params::MC_MSMC_KS_R>) _param_mc_msmc_ks_roll,
-		(ParamFloat<px4::params::MC_MSMC_KS_P>) _param_mc_msmc_ks_pitch,
-		(ParamFloat<px4::params::MC_MSMC_KS_Y>) _param_mc_msmc_ks_yaw,
-		(ParamFloat<px4::params::MC_MSMC_RSPD_L>) _param_mc_msmc_rate_sp_deriv_lim
+		(ParamFloat<px4::params::MC_YAW_P>) _param_mc_yaw_p
 	)
 
 	static constexpr float _publishing_dt_s = 100e-3f;

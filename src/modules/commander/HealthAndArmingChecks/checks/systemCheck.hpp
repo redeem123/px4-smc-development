@@ -37,6 +37,8 @@
 
 #include <uORB/Subscription.hpp>
 #include <uORB/topics/actuator_armed.h>
+#include <uORB/topics/parameter_update.h>
+#include <uORB/topics/rate_ctrl_status.h>
 
 class SystemChecks : public HealthAndArmingCheckBase
 {
@@ -48,11 +50,15 @@ public:
 
 private:
 	uORB::Subscription _actuator_armed_sub{ORB_ID(actuator_armed)};
+	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
+	uORB::Subscription _rate_ctrl_status_sub{ORB_ID(rate_ctrl_status)};
 
 	DEFINE_PARAMETERS_CUSTOM_PARENT(HealthAndArmingCheckBase,
 					(ParamInt<px4::params::CBRK_VTOLARMING>) _param_cbrk_vtolarming,
 					(ParamInt<px4::params::CBRK_USB_CHK>) _param_cbrk_usb_chk,
 					(ParamBool<px4::params::COM_ARM_WO_GPS>) _param_com_arm_wo_gps,
-					(ParamInt<px4::params::COM_ARM_AUTH_REQ>) _param_com_arm_auth_req
+					(ParamInt<px4::params::COM_ARM_AUTH_REQ>) _param_com_arm_auth_req,
+					(ParamInt<px4::params::MC_RATE_CTRL_T>) _param_mc_rate_ctrl_t,
+					(ParamInt<px4::params::MC_MSMC_CFG>) _param_mc_msmc_cfg
 				       )
 };

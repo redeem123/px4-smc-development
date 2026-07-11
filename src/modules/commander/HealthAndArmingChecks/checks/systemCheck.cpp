@@ -34,12 +34,55 @@
 #include "systemCheck.hpp"
 
 #include "../../Arming/ArmAuthorization/ArmAuthorization.h"
+#include <drivers/drv_hrt.h>
 #include <lib/circuit_breaker/circuit_breaker.h>
 #include <uORB/topics/vehicle_command_ack.h>
 
 void SystemChecks::checkAndReport(const Context &context, Report &reporter)
 {
 	actuator_armed_s actuator_armed;
+
+	if (!context.isArmed() && _param_mc_rate_ctrl_t.get() == 2) {
+		if (_param_mc_msmc_cfg.get() != 1) {
+			/* EVENT
+			 * @description
+			 * Review the physical inertia, torque effectiveness, SMC gains, and limits for this vehicle.
+			 * Then set <param>MC_MSMC_CFG</param> to 1 as the last model-card step.
+			 */
+			reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+						    events::ID("check_system_smc_config"), events::Log::Error,
+						    "SMC model card not acknowledged");
+
+			if (reporter.mavlink_log_pub()) {
+				mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: SMC model card not acknowledged");
+			}
+
+		} else {
+			rate_ctrl_status_s controller_status{};
+			parameter_update_s parameter_update{};
+			const bool status_available = _rate_ctrl_status_sub.copy(&controller_status);
+			const bool update_available = _parameter_update_sub.copy(&parameter_update);
+			const bool status_stale = !status_available || hrt_elapsed_time(&controller_status.timestamp) > 2_s;
+			const bool update_pending = update_available && controller_status.timestamp < parameter_update.timestamp;
+			const bool controller_ready = !status_stale && !update_pending
+						      && controller_status.controller_type == 2 && controller_status.model_valid;
+
+			if (!controller_ready) {
+				/* EVENT
+				 * @description
+				 * The rate controller rejected the SMC card, has not applied the latest parameter update,
+				 * or is not publishing a current valid SMC status.
+				 */
+				reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+							    events::ID("check_system_smc_not_ready"), events::Log::Error,
+							    "SMC controller not ready");
+
+				if (reporter.mavlink_log_pub()) {
+					mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: SMC controller not ready");
+				}
+			}
+		}
+	}
 
 	if (_actuator_armed_sub.copy(&actuator_armed)) {
 		if (actuator_armed.termination || actuator_armed.kill) {

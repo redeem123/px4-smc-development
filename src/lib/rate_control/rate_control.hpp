@@ -34,7 +34,7 @@
 /**
  * @file rate_control.hpp
  *
- * PID 3 axis angular rate / angular velocity control.
+ * PID, constrained MPC, and model-based SMC 3-axis angular-rate control.
  */
 
 #pragma once
@@ -59,7 +59,7 @@ public:
 	void setPidGains(const matrix::Vector3f &P, const matrix::Vector3f &I, const matrix::Vector3f &D);
 
 	/**
-	 * Set the mximum absolute value of the integrator for all axes
+	 * Set the maximum absolute value of the PID integrator for all axes
 	 * @param integrator_limit limit value for all axes x, y, z
 	 */
 	void setIntegratorLimit(const matrix::Vector3f &integrator_limit) { _lim_int = integrator_limit; };
@@ -98,20 +98,25 @@ public:
 
 	/**
 	 * Set controller type (0 = PID, 1 = MPC, 2 = model-based SMC)
+	 * @return true when the requested controller was accepted
 	 */
-	void setControllerType(int type);
+	bool setControllerType(int type);
+	int getControllerType() const { return _controller_type; }
 
 	/**
-	 * Set model-based SMC parameters
+	 * Atomically set the complete model-based SMC parameter card.
+	 * Invalid cards are rejected without changing the last valid configuration.
+	 * @return true when the complete card was accepted
 	 */
-	void setModelBasedSmcGains(const matrix::Vector3f &inertia, const matrix::Vector3f &c,
-				   const matrix::Vector3f &eta, const matrix::Vector3f &bnd,
-				   const matrix::Vector3f &ks, float rate_sp_derivative_limit);
-
-	/**
-	 * Set SMC safeguards (LPF cutoff frequency and Slew rate limit)
-	 */
-	void setSMCSafeguards(float cutoff, float slew);
+	bool setModelBasedSmcParameters(const matrix::Vector3f &inertia,
+					const matrix::Vector3f &control_effectiveness,
+					const matrix::Vector3f &c, const matrix::Vector3f &eta,
+					const matrix::Vector3f &bnd, const matrix::Vector3f &ks,
+					float rate_sp_derivative_limit,
+					const matrix::Vector3f &integrator_limit,
+					const matrix::Vector3f &torque_limit,
+					float cutoff, float slew);
+	bool modelBasedSmcParametersValid() const { return _msmc_model_valid; }
 
 	/**
 	 * Set rate-level MPC parameters
@@ -124,6 +129,7 @@ public:
 	 * Set rate-level MPC integral bias adaptation gains.
 	 */
 	void setMpcIntegralGain(const matrix::Vector3f &I);
+	void setMpcIntegralLimit(const matrix::Vector3f &integrator_limit);
 
 	/**
 	 * Set rate-level MPC normalized torque constraints.
@@ -141,6 +147,11 @@ public:
 	void setMpcGyroCompensation(float gyro_compensation_weight);
 
 	/**
+	 * Set the first-order normalized torque actuator time constant.
+	 */
+	void setMpcActuatorTimeConstant(float time_constant);
+
+	/**
 	 * Reset model-based SMC rate setpoint feed-forward history.
 	 */
 	void resetModelBasedSmcSetpoint()
@@ -149,13 +160,28 @@ public:
 		_smc_rate_sp_prev_valid = false;
 	}
 
+	void resetMpcSetpoint()
+	{
+		_mpc_last_rate_sp.zero();
+		_mpc_rate_sp_prev_valid = false;
+	}
+
+	void resetSetpointHistory()
+	{
+		resetModelBasedSmcSetpoint();
+		resetMpcSetpoint();
+	}
+
 	/**
 	 * Reset SMC-only dynamic state.
 	 */
 	void resetSmcState()
 	{
 		_smc_rate_int.zero();
+		_smc_surface.zero();
 		_smc_s_filtered.zero();
+		_smc_torque_raw.zero();
+		_smc_torque_limited.zero();
 		_smc_last_torque.zero();
 		resetModelBasedSmcSetpoint();
 	}
@@ -170,9 +196,12 @@ public:
 		resetSmcState();
 		_mpc_rate_int.zero();
 		_mpc_last_torque.zero();
-		_mpc_last_rate_sp.zero();
-		_mpc_rate_sp_prev_valid = false;
+		_mpc_actuator_state.zero();
+		_mpc_warm_start.zero();
+		resetMpcSetpoint();
 		_mpc_last_torque_valid = false;
+		_last_output.zero();
+		_last_output_valid = false;
 	}
 
 	/**
@@ -191,9 +220,17 @@ public:
 			_smc_rate_sp_prev_valid = false;
 			_mpc_rate_int(axis) = 0.f;
 			_mpc_last_torque(axis) = 0.f;
+			_mpc_actuator_state(axis) = 0.f;
+
+			for (int step = 0; step < MPC_MAX_HORIZON; step++) {
+				_mpc_warm_start(axis, step) = 0.f;
+			}
+
 			_mpc_last_rate_sp(axis) = 0.f;
 			_mpc_rate_sp_prev_valid = false;
 			_mpc_last_torque_valid = false;
+			_last_output(axis) = 0.f;
+			_last_output_valid = false;
 		}
 	}
 
@@ -207,37 +244,45 @@ private:
 	void updateIntegral(matrix::Vector3f &rate_error, const float dt);
 	matrix::Vector3f updateMPC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp,
 				   const float dt, const bool landed);
-	matrix::Vector3f updateModelBasedSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp, const float dt,
-					     const matrix::Vector3f &angular_accel, const bool landed);
+	matrix::Vector3f updateModelBasedSMC(const matrix::Vector3f &rate, const matrix::Vector3f &rate_sp,
+					     const float dt, const bool landed);
 	void updateSMCIntegral(const matrix::Vector3f &rate_error, const float dt);
 
 	// Controller Type
 	int _controller_type{0};
 
 	// Model-based SMC parameters
-	matrix::Vector3f _msmc_inertia;
-	matrix::Vector3f _msmc_c;
-	matrix::Vector3f _msmc_eta;
-	matrix::Vector3f _msmc_bnd;
-	matrix::Vector3f _msmc_ks;
-	float _msmc_rate_sp_derivative_limit{10.f};
+	matrix::Vector3f _msmc_inertia{0.01f, 0.01f, 0.02f};
+	matrix::Vector3f _msmc_control_effectiveness{1.f, 1.f, 1.f};
+	matrix::Vector3f _msmc_c{0.8f, 0.8f, 0.5f};
+	matrix::Vector3f _msmc_eta{0.5f, 0.5f, 0.3f};
+	matrix::Vector3f _msmc_bnd{0.25f, 0.25f, 0.25f};
+	matrix::Vector3f _msmc_ks{0.05f, 0.05f, 0.03f};
+	matrix::Vector3f _msmc_integral_limit{0.3f, 0.3f, 0.3f};
+	matrix::Vector3f _msmc_torque_limit{1.f, 1.f, 1.f};
+	float _msmc_rate_sp_derivative_limit{0.f};
+	bool _msmc_model_valid{false};
 
 	// Rate MPC parameters
 	static constexpr int MPC_MAX_HORIZON = 8;
-	matrix::Vector3f _mpc_inertia;
-	matrix::Vector3f _mpc_rate_weight;
-	matrix::Vector3f _mpc_control_effectiveness;
-	matrix::Vector3f _mpc_torque_weight;
+	matrix::Vector3f _mpc_inertia{0.01f, 0.01f, 0.02f};
+	matrix::Vector3f _mpc_rate_weight{1.f, 1.f, 1.f};
+	matrix::Vector3f _mpc_control_effectiveness{1.f, 1.f, 1.f};
+	matrix::Vector3f _mpc_torque_weight{1.f, 1.f, 1.f};
 	matrix::Vector3f _mpc_torque_rate_weight;
 	matrix::Vector3f _mpc_integral_gain;
+	matrix::Vector3f _mpc_integral_limit{0.3f, 0.3f, 0.3f};
 	matrix::Vector3f _mpc_torque_limit{1.f, 1.f, 1.f};
 	matrix::Vector3f _mpc_rate_int;
 	matrix::Vector3f _mpc_last_torque;
+	matrix::Vector3f _mpc_actuator_state;
 	matrix::Vector3f _mpc_last_rate_sp;
+	matrix::Matrix<float, 3, MPC_MAX_HORIZON> _mpc_warm_start;
 	int _mpc_horizon{6};
 	float _mpc_torque_slew_rate{10.f};
 	float _mpc_rate_sp_derivative_limit{0.f};
 	float _mpc_gyro_compensation_weight{0.f};
+	float _mpc_actuator_time_constant{0.02f};
 	bool _mpc_last_torque_valid{false};
 	bool _mpc_rate_sp_prev_valid{false};
 
@@ -251,10 +296,15 @@ private:
 	// States
 	matrix::Vector3f _rate_int; ///< integral term of the rate controller
 	matrix::Vector3f _smc_rate_int; ///< integral term of the SMC controller
+	matrix::Vector3f _smc_surface; ///< unfiltered model-based SMC sliding surface
 	matrix::Vector3f _smc_s_filtered; ///< filtered sliding surface state
+	matrix::Vector3f _smc_torque_raw; ///< normalized SMC torque before limits
+	matrix::Vector3f _smc_torque_limited; ///< normalized SMC torque after limits
 	matrix::Vector3f _smc_last_torque; ///< last output torque state
 	matrix::Vector3f _smc_last_rate_sp; ///< last rate setpoint for model-based SMC feed-forward acceleration
 	bool _smc_rate_sp_prev_valid{false};
+	matrix::Vector3f _last_output;
+	bool _last_output_valid{false};
 
 	// Safeguards configurations
 	float _smc_lpf_cutoff{20.0f}; ///< Cutoff frequency for sliding surface LPF (Hz)

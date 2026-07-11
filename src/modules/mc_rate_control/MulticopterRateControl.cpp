@@ -123,8 +123,6 @@ MulticopterRateControl::parameters_updated()
 	_rate_control.setFeedForwardGain(
 		Vector3f(_param_mc_rollrate_ff.get(), _param_mc_pitchrate_ff.get(), _param_mc_yawrate_ff.get()));
 
-	_rate_control.setControllerType(_param_mc_rate_ctrl_t.get());
-
 	_rate_control.setMpcGains(
 		Vector3f(_param_mc_mpc_j_roll.get(), _param_mc_mpc_j_pitch.get(), _param_mc_mpc_j_yaw.get()),
 		Vector3f(_param_mc_mpc_q_roll.get(), _param_mc_mpc_q_pitch.get(), _param_mc_mpc_q_yaw.get()),
@@ -137,6 +135,8 @@ MulticopterRateControl::parameters_updated()
 
 	_rate_control.setMpcIntegralGain(
 		Vector3f(_param_mc_mpc_i_roll.get(), _param_mc_mpc_i_pitch.get(), _param_mc_mpc_i_yaw.get()));
+	_rate_control.setMpcIntegralLimit(
+		Vector3f(_param_mc_mpc_ilim_roll.get(), _param_mc_mpc_ilim_pitch.get(), _param_mc_mpc_ilim_yaw.get()));
 
 	_rate_control.setMpcTorqueLimit(
 		Vector3f(_param_mc_mpc_tmax_roll.get(), _param_mc_mpc_tmax_pitch.get(), _param_mc_mpc_tmax_yaw.get()));
@@ -144,17 +144,49 @@ MulticopterRateControl::parameters_updated()
 	_rate_control.setMpcRateSetpointDerivativeLimit(_param_mc_mpc_rate_sp_deriv_lim.get());
 
 	_rate_control.setMpcGyroCompensation(_param_mc_mpc_gyro.get());
+	_rate_control.setMpcActuatorTimeConstant(_param_mc_mpc_tau.get());
 
-	_rate_control.setModelBasedSmcGains(
-		Vector3f(_param_mc_msmc_j_roll.get(), _param_mc_msmc_j_pitch.get(), _param_mc_msmc_j_yaw.get()),
-		Vector3f(_param_mc_msmc_c_roll.get(), _param_mc_msmc_c_pitch.get(), _param_mc_msmc_c_yaw.get()),
-		Vector3f(_param_mc_msmc_eta_roll.get(), _param_mc_msmc_eta_pitch.get(), _param_mc_msmc_eta_yaw.get()),
-		Vector3f(_param_mc_msmc_bnd_roll.get(), _param_mc_msmc_bnd_pitch.get(), _param_mc_msmc_bnd_yaw.get()),
-		Vector3f(_param_mc_msmc_ks_roll.get(), _param_mc_msmc_ks_pitch.get(), _param_mc_msmc_ks_yaw.get()),
-		_param_mc_msmc_rate_sp_deriv_lim.get()
-	);
+	const bool smc_card_acknowledged = _param_mc_msmc_cfg.get() == 1;
+	const bool smc_parameters_valid = smc_card_acknowledged
+					  && _rate_control.setModelBasedSmcParameters(
+							  Vector3f(_param_mc_msmc_j_roll.get(), _param_mc_msmc_j_pitch.get(),
+									  _param_mc_msmc_j_yaw.get()),
+							  Vector3f(_param_mc_msmc_eff_roll.get(), _param_mc_msmc_eff_pitch.get(),
+									  _param_mc_msmc_eff_yaw.get()),
+							  Vector3f(_param_mc_msmc_c_roll.get(), _param_mc_msmc_c_pitch.get(),
+									  _param_mc_msmc_c_yaw.get()),
+							  Vector3f(_param_mc_msmc_eta_roll.get(), _param_mc_msmc_eta_pitch.get(),
+									  _param_mc_msmc_eta_yaw.get()),
+							  Vector3f(_param_mc_msmc_bnd_roll.get(), _param_mc_msmc_bnd_pitch.get(),
+									  _param_mc_msmc_bnd_yaw.get()),
+							  Vector3f(_param_mc_msmc_ks_roll.get(), _param_mc_msmc_ks_pitch.get(),
+									  _param_mc_msmc_ks_yaw.get()),
+							  _param_mc_msmc_rate_sp_deriv_lim.get(),
+							  Vector3f(_param_mc_msmc_ilim_roll.get(), _param_mc_msmc_ilim_pitch.get(),
+									  _param_mc_msmc_ilim_yaw.get()),
+							  Vector3f(_param_mc_msmc_tmax_roll.get(), _param_mc_msmc_tmax_pitch.get(),
+									  _param_mc_msmc_tmax_yaw.get()),
+							  _param_mc_smc_lpf.get(), _param_mc_smc_slew.get());
 
-	_rate_control.setSMCSafeguards(_param_mc_smc_lpf.get(), _param_mc_smc_slew.get());
+	_smc_configuration_valid = smc_parameters_valid;
+	const int requested_controller = _param_mc_rate_ctrl_t.get();
+
+	if (requested_controller == 2 && !_smc_configuration_valid) {
+		PX4_ERR("SMC configuration rejected; set MC_MSMC_CFG=1 after model review");
+
+	} else if (!_rate_control.setControllerType(requested_controller)) {
+		PX4_ERR("rate controller selection rejected: %d", requested_controller);
+	}
+
+	if (_param_mc_rate_ctrl_t.get() == 1
+	    && (Vector3f(_param_mc_mpc_j_roll.get(), _param_mc_mpc_j_pitch.get(), _param_mc_mpc_j_yaw.get()).min() <= 0.f
+		|| Vector3f(_param_mc_mpc_eff_roll.get(), _param_mc_mpc_eff_pitch.get(), _param_mc_mpc_eff_yaw.get()).min() <= 0.f)) {
+		PX4_WARN("invalid MPC model update rejected; retaining last valid J/EFF");
+	}
+
+	if (smc_card_acknowledged && !smc_parameters_valid) {
+		PX4_ERR("invalid SMC card rejected; retaining last valid model");
+	}
 
 	// manual rate control acro mode rate limits
 	_acro_rate_max = Vector3f(radians(_param_mc_acro_r_max.get()), radians(_param_mc_acro_p_max.get()),
@@ -207,7 +239,7 @@ MulticopterRateControl::Run()
 		if (!_rate_setpoint_context_valid
 		    || _rate_setpoint_source != rate_setpoint_source
 		    || _rate_setpoint_nav_state != _vehicle_status.nav_state) {
-			_rate_control.resetModelBasedSmcSetpoint();
+			_rate_control.resetSetpointHistory();
 			_rate_setpoint_source = rate_setpoint_source;
 			_rate_setpoint_nav_state = _vehicle_status.nav_state;
 			_rate_setpoint_context_valid = true;
@@ -297,12 +329,6 @@ MulticopterRateControl::Run()
 			// apply low-pass filtering on yaw axis to reduce high frequency torque caused by rotor acceleration
 			torque_setpoint(2) = _output_lpf_yaw.update(torque_setpoint(2), dt);
 
-			// publish rate controller status
-			rate_ctrl_status_s rate_ctrl_status{};
-			_rate_control.getRateControlStatus(rate_ctrl_status);
-			rate_ctrl_status.timestamp = hrt_absolute_time();
-			_controller_status_pub.publish(rate_ctrl_status);
-
 			// publish thrust and torque setpoints
 			vehicle_thrust_setpoint_s vehicle_thrust_setpoint{};
 			vehicle_torque_setpoint_s vehicle_torque_setpoint{};
@@ -329,6 +355,7 @@ MulticopterRateControl::Run()
 					}
 				}
 			}
+
 			vehicle_thrust_setpoint.timestamp_sample = angular_velocity.timestamp_sample;
 			vehicle_thrust_setpoint.timestamp = hrt_absolute_time();
 			_vehicle_thrust_setpoint_pub.publish(vehicle_thrust_setpoint);
@@ -340,8 +367,15 @@ MulticopterRateControl::Run()
 			updateActuatorControlsStatus(vehicle_torque_setpoint, dt);
 
 		} else {
-			_rate_control.resetModelBasedSmcSetpoint();
+			_rate_control.resetSetpointHistory();
 		}
+
+		// Publish configuration validity even while rate control is disabled.
+		rate_ctrl_status_s rate_ctrl_status{};
+		_rate_control.getRateControlStatus(rate_ctrl_status);
+		rate_ctrl_status.model_valid = rate_ctrl_status.model_valid && _smc_configuration_valid;
+		rate_ctrl_status.timestamp = hrt_absolute_time();
+		_controller_status_pub.publish(rate_ctrl_status);
 	}
 
 	perf_end(_loop_perf);
@@ -419,7 +453,7 @@ int MulticopterRateControl::print_usage(const char *reason)
 This implements the multicopter rate controller. It takes rate setpoints (in acro mode
 via `manual_control_setpoint` topic) as inputs and outputs actuator control messages.
 
-The controller has a PID loop for angular rate error.
+The selected controller is PID, constrained finite-horizon MPC, or model-based SMC.
 
 )DESCR_STR");
 
