@@ -185,8 +185,11 @@ initial hypotheses for the real vehicle until measured.
   `12.04 us` average and `88 us` maximum with `1604 bytes` stack reserve.
 - A 45-second stationary optical-flow sample still exceeded the horizontal
   velocity innovation threshold in `113/446` samples (`25.34%`) and observed
-  apparent flow up to `5.24 rad/s`. This remains a prop-on flight blocker even
-  though an immediate `commander check` snapshot passed.
+  apparent flow up to `5.24 rad/s` over the original floor surface. Repeating
+  the gate over a bright textured surface passed with `0/444` threshold
+  exceedances, estimator-ratio maximum `0.071`, horizontal-speed maximum
+  `0.0077 m/s`, and flow quality mean `122.3`. The textured, well-lit surface is
+  therefore a required operating condition for indoor optical-flow flight.
 - The provisional card still lacks measured real-vehicle inertia,
   torque-effectiveness, and actuator lag. Its current state authorizes only
   props-off response tests and controlled model-identification preparation.
