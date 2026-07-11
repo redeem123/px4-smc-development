@@ -98,6 +98,9 @@ def run_one(config, args):
     env["PX4_GZ_HEADLESS"] = "1"
     env["PX4_PARAM_MC_RATE_CTRL_T"] = str(args.controller)
 
+    for name, value in getattr(args, "parameter_overrides", {}).items():
+        env[f"PX4_PARAM_{name}"] = str(value)
+
     print(f"\n== start target={args.sitl_target} controller={args.controller} {config.tag}", flush=True)
     sitl = subprocess.Popen(
         ["make", "px4_sitl", args.sitl_target],

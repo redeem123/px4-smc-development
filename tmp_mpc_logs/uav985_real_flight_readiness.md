@@ -66,6 +66,42 @@ All four runs had valid mode-2 status, no failsafe or allocator miss, no high
 motor saturation, and <= `0.55%` internal yaw-limit occupancy. Raw ULogs remain
 local and are excluded from Git.
 
+### PID-matched provisional SMC card
+
+The real vehicle's legacy card had local small-error gains of
+`0.02395/0.02395/0.38240`, compared with the flight-proven PID proportional
+gains `0.15/0.15/0.20`. The provisional card removes that `6.3x` roll/pitch
+under-authority and `1.9x` yaw over-authority while physical identification is
+pending:
+
+```text
+J       0.01, 0.01, 0.02
+EFF     1.0, 1.0, 1.0
+C       3.0, 3.0, 1.5
+ETA     5.0, 5.0, 1.5
+BND     0.5, 0.5, 0.2
+KS      2.0, 2.0, 1.0
+RSPD_L  0.0
+TMAX    0.20, 0.20, 0.10
+LPF     20.0 Hz
+SLEW    15.0 normalized torque/s
+```
+
+For small error and zero integral, the normalized-torque slope is
+`J/EFF * (C + ETA/BND + KS)`. This card gives exactly
+`0.15/0.15/0.20`, matching the installed PID baseline. It passed one exact-state
+and one optical-flow/range yaw-inclusive SITL acceptance run:
+
+| Estimator | Log | Tracking RMS | RP rate-error RMS | Worst yaw settle | Failsafe/saturation |
+|---|---|---:|---:|---:|---|
+| Exact state | `07_05_15` | `0.0363 m` | `0.0080/0.0064 rad/s` | `1.204 s` | none |
+| Optical flow/range | `07_06_55` | `0.0349 m` | `0.0038/0.0040 rad/s` | `1.092 s` | none |
+
+The acceptance harness applies non-default expected parameters only with
+`--apply-expected-parameters`, and rejects that option for non-UDP connections.
+This card is a bounded controller-gain candidate, not a physically identified
+model card.
+
 Recheck an existing log without flying:
 
 ```sh
@@ -110,31 +146,50 @@ initial hypotheses for the real vehicle until measured.
 
 ### Live FMU-v6C bench evidence (2026-07-11)
 
-This evidence is from the immediately preceding image. The final fail-closed
-image in this document builds successfully but must repeat this bench gate after
-flashing; it has not been authorized for flight merely by the SITL results.
+- The exact release image was uploaded and verified on board ID `56`
+  (`PX4_FMU_V6C`), with firmware git hash `21f5a3ce4ba` and image SHA-256
+  `15708ec7e99d43f98be17a70251852667c7945e9bc04a44c4641bf4b32f91d17`.
+- The pre- and post-flash backups are
+  `tmp_mpc_logs/pixhawk_params_before_smc_release_2026-07-11.json` and
+  `tmp_mpc_logs/pixhawk_params_after_smc_release_2026-07-11.json`.
+- The board is saved in PID mode with `MC_RATE_CTRL_T=0`, `MC_MSMC_CFG=0`, and
+  `MIS_TKO_ALT_MAX=1.0`. A real-board fail-closed test rejected mode 2 and the
+  commander reported `SMC model card not acknowledged`; PID was restored and
+  saved immediately afterward.
+- RC input is live and centered with throttle low. The battery reports a healthy
+  connected 4S pack. Props-off low-power pulses for motors 1 through 4 were
+  accepted while disarmed, but motor identity and direction still require visual
+  confirmation because ESC telemetry is unavailable.
+- The rate-control work queue runs at about `665 Hz`; PID rate control measured
+  `11.99 us` average and `284 us` maximum with `1604 bytes` of stack reserve.
+- Optical flow, range, and EKF fusion are live. However, a stationary 45-second
+  sample exceeded the horizontal-velocity innovation preflight threshold in
+  `206/448` samples (`45.98%`), with apparent flow up to `6.87 rad/s`. Occasional
+  `commander check: OK` snapshots do not clear this intermittent failure.
+- This is not a flight authorization. The generic hardware model card is
+  physically unidentified and fails the SMC local-gain sanity gate on all axes;
+  the optical-flow stationary gate also remains open.
 
-- The completed image was uploaded and verified on board ID `56` (`PX4_FMU_V6C`).
-  The pre-flash parameter backup is
-  `tmp_mpc_logs/pixhawk_params_before_phase6_2026-07-11.json`; it contains all
-  `1232` indexed parameters plus the `_HASH_CHECK` pseudo-parameter.
-- With USB power only, the board stayed disarmed and the real rate-control work
-  queue ran at a `1504 us` period. Mode 1 with horizon `8` completed `53201`
-  measured cycles at `445.65 us` average and `517 us` maximum. The maximum is
-  below half the controller period (`752 us`).
-- Mode 1 used `3156/4072 bytes` of the rate-control work-queue stack, leaving
-  `916 bytes`. This passes the required `512-byte` reserve.
-- Mode 2 completed `25511` measured cycles at `13.25 us` average and `22 us`
-  maximum.
-- After testing, the board was restored and independently verified at
-  `MC_RATE_CTRL_T=0` and `MC_MPC_HORIZON=6`.
-- Optical flow and range remained live after the flash: final flow quality was
-  `126`, downward range was `19 cm`, and local position/velocity were stable.
-- This is not a flight authorization. No flight battery or RC takeover path was
-  present, detailed PX4 preflight results were not proven clean, and the board
-  currently contains generic/unidentified model values (`EFF=1`, full torque
-  limits, and a stale `MC_MSMC_J_Y=0.08`). Modes 1 and 2 must not be selected
-  until a measured, reviewed parameter card replaces those values.
+### Live provisional-card update (2026-07-11)
+
+- The complete pre-change backup is
+  `tmp_mpc_logs/pixhawk_params_before_pid_matched_smc_2026-07-11.json`; the
+  independently read post-change backup is
+  `tmp_mpc_logs/pixhawk_params_pid_matched_smc_2026-07-11.json`.
+- The Pixhawk is saved at `MC_RATE_CTRL_T=2`, `MC_MSMC_CFG=1` with the exact
+  provisional card above. Runtime status reports `controller_type=2` and
+  `model_valid=true`; this is real SMC execution, not PID fallback.
+- `Tools/validate_smc_model_card.py` reports local SMC/PID gain ratios
+  `1.000/1.000/1.000` and passes the configured `0.5-1.5` sanity envelope.
+- On the FMU-v6C, mode 2 runs at about `663 Hz`; `mc_rate_control` measured
+  `12.04 us` average and `88 us` maximum with `1604 bytes` stack reserve.
+- A 45-second stationary optical-flow sample still exceeded the horizontal
+  velocity innovation threshold in `113/446` samples (`25.34%`) and observed
+  apparent flow up to `5.24 rad/s`. This remains a prop-on flight blocker even
+  though an immediate `commander check` snapshot passed.
+- The provisional card still lacks measured real-vehicle inertia,
+  torque-effectiveness, and actuator lag. Its current state authorizes only
+  props-off response tests and controlled model-identification preparation.
 
 ## Physical-identification gate
 
@@ -165,6 +220,20 @@ thrust window; that validates the tool, not the real vehicle.
 The firmware uses constant local `EFF` values. The real-flight card is invalid
 if the intended thrust window or battery/propulsion state is materially outside
 the identification data.
+
+Before acknowledging the model card, compare its small-error authority with the
+known-good PID baseline:
+
+```sh
+.venv/bin/python Tools/validate_smc_model_card.py parameters.json \
+  --allow-unacknowledged
+```
+
+For the first SMC flight, every axis must remain within the default `0.5-1.5`
+SMC/PID proportional-gain ratio envelope. This is a gain sanity check, not a
+substitute for physical inertia/effectiveness identification. Remove
+`--allow-unacknowledged` for the final card check after setting
+`MC_MSMC_CFG=1` last.
 
 ## First controlled flight
 

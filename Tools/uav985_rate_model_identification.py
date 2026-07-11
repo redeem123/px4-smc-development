@@ -38,6 +38,11 @@ def vector_data(data, fields):
     return np.column_stack([data[field] for field in fields]).astype(float)
 
 
+def sample_timestamps(data):
+    field = "timestamp_sample" if "timestamp_sample" in data else "timestamp"
+    return data[field].astype(float) / 1e6
+
+
 def zero_order_hold(sample_timestamps, source_timestamps, source_values):
     indexes = np.searchsorted(source_timestamps, sample_timestamps, side="right") - 1
     valid = indexes >= 0
@@ -141,7 +146,7 @@ def main():
     accelerations = vector_data(
         angular_velocity, ("xyz_derivative[0]", "xyz_derivative[1]", "xyz_derivative[2]")
     )
-    torque_timestamps = torque_setpoint["timestamp"].astype(float) / 1e6
+    torque_timestamps = sample_timestamps(torque_setpoint)
     commands = zero_order_hold(
         timestamps,
         torque_timestamps,
@@ -272,13 +277,23 @@ def main():
             identified.append(False)
             continue
 
-        estimate = fit_axis(
-            timestamps,
-            commands[:, axis_index],
-            rates[:, axis_index],
-            physical_torque[:, axis_index],
-            tau_candidates,
-        )
+        try:
+            estimate = fit_axis(
+                timestamps,
+                commands[:, axis_index],
+                rates[:, axis_index],
+                physical_torque[:, axis_index],
+                tau_candidates,
+            )
+        except RuntimeError as exc:
+            estimates.append(None)
+            identified.append(False)
+            print(
+                f"{axis:5s} identification=REJECTED reasons=no-positive-effectiveness "
+                f"detail={exc}"
+            )
+            continue
+
         estimates.append(estimate)
         rejection_reasons = []
 

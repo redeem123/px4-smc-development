@@ -18,6 +18,74 @@ def parse_vector(value):
     return values
 
 
+def expected_controller_parameters(args):
+    expected_parameters = {
+        "MC_RATE_CTRL_T": args.controller,
+        "MIS_TKO_ALT_MAX": 1.0,
+    }
+
+    if args.controller == 1:
+        expected_parameters.update(
+            {
+                "MC_MPC_J_R": args.expected_inertia[0],
+                "MC_MPC_J_P": args.expected_inertia[1],
+                "MC_MPC_J_Y": args.expected_inertia[2],
+                "MC_MPC_EFF_R": args.expected_effectiveness[0],
+                "MC_MPC_EFF_P": args.expected_effectiveness[1],
+                "MC_MPC_EFF_Y": args.expected_effectiveness[2],
+                "MC_MPC_Q_R": args.expected_mpc_q[0],
+                "MC_MPC_Q_P": args.expected_mpc_q[1],
+                "MC_MPC_Q_Y": args.expected_mpc_q[2],
+                "MC_MPC_R_R": args.expected_mpc_r[0],
+                "MC_MPC_R_P": args.expected_mpc_r[1],
+                "MC_MPC_R_Y": args.expected_mpc_r[2],
+                "MC_MPC_DU_R": args.expected_mpc_du[0],
+                "MC_MPC_DU_P": args.expected_mpc_du[1],
+                "MC_MPC_DU_Y": args.expected_mpc_du[2],
+                "MC_MPC_TAU": args.expected_actuator_tau,
+                "MC_MPC_HORIZON": args.expected_horizon,
+                "MC_MPC_SLEW": args.expected_mpc_slew,
+                "MC_MPC_GYRO": args.expected_mpc_gyro,
+                "MC_MPC_TMAX_R": args.expected_torque_limit[0],
+                "MC_MPC_TMAX_P": args.expected_torque_limit[1],
+                "MC_MPC_TMAX_Y": args.expected_torque_limit[2],
+            }
+        )
+
+    else:
+        expected_parameters.update(
+            {
+                "MC_MSMC_CFG": 1,
+                "MC_MSMC_J_R": args.expected_inertia[0],
+                "MC_MSMC_J_P": args.expected_inertia[1],
+                "MC_MSMC_J_Y": args.expected_inertia[2],
+                "MC_MSMC_EFF_R": args.expected_effectiveness[0],
+                "MC_MSMC_EFF_P": args.expected_effectiveness[1],
+                "MC_MSMC_EFF_Y": args.expected_effectiveness[2],
+                "MC_MSMC_C_R": args.expected_smc_c[0],
+                "MC_MSMC_C_P": args.expected_smc_c[1],
+                "MC_MSMC_C_Y": args.expected_smc_c[2],
+                "MC_MSMC_ETA_R": args.expected_smc_eta[0],
+                "MC_MSMC_ETA_P": args.expected_smc_eta[1],
+                "MC_MSMC_ETA_Y": args.expected_smc_eta[2],
+                "MC_MSMC_BND_R": args.expected_smc_boundary[0],
+                "MC_MSMC_BND_P": args.expected_smc_boundary[1],
+                "MC_MSMC_BND_Y": args.expected_smc_boundary[2],
+                "MC_MSMC_KS_R": args.expected_smc_ks[0],
+                "MC_MSMC_KS_P": args.expected_smc_ks[1],
+                "MC_MSMC_KS_Y": args.expected_smc_ks[2],
+                "MC_MSMC_RSPD_L": args.expected_smc_rate_sp_derivative,
+                "MC_SMC_LPF": args.expected_smc_lpf,
+                "MC_SMC_SLEW": args.expected_smc_slew,
+                "MC_MSMC_TMAX_R": args.expected_torque_limit[0],
+                "MC_MSMC_TMAX_P": args.expected_torque_limit[1],
+                "MC_MSMC_TMAX_Y": args.expected_torque_limit[2],
+            }
+        )
+
+    return expected_parameters
+
+
 def check_thresholds(result, args):
     checks = [
         ("tracking RMS", result["track_square"]["rms"], "<=", args.max_track_rms),
@@ -160,69 +228,7 @@ def check_thresholds(result, args):
         if not passed:
             failures.append(label)
 
-    expected_parameters = {
-        "MC_RATE_CTRL_T": args.controller,
-        "MIS_TKO_ALT_MAX": 1.0,
-    }
-
-    if args.controller == 1:
-        expected_parameters.update(
-            {
-                "MC_MPC_J_R": args.expected_inertia[0],
-                "MC_MPC_J_P": args.expected_inertia[1],
-                "MC_MPC_J_Y": args.expected_inertia[2],
-                "MC_MPC_EFF_R": args.expected_effectiveness[0],
-                "MC_MPC_EFF_P": args.expected_effectiveness[1],
-                "MC_MPC_EFF_Y": args.expected_effectiveness[2],
-                "MC_MPC_Q_R": args.expected_mpc_q[0],
-                "MC_MPC_Q_P": args.expected_mpc_q[1],
-                "MC_MPC_Q_Y": args.expected_mpc_q[2],
-                "MC_MPC_R_R": args.expected_mpc_r[0],
-                "MC_MPC_R_P": args.expected_mpc_r[1],
-                "MC_MPC_R_Y": args.expected_mpc_r[2],
-                "MC_MPC_DU_R": args.expected_mpc_du[0],
-                "MC_MPC_DU_P": args.expected_mpc_du[1],
-                "MC_MPC_DU_Y": args.expected_mpc_du[2],
-                "MC_MPC_TAU": args.expected_actuator_tau,
-                "MC_MPC_HORIZON": args.expected_horizon,
-                "MC_MPC_SLEW": args.expected_mpc_slew,
-                "MC_MPC_GYRO": args.expected_mpc_gyro,
-                "MC_MPC_TMAX_R": args.expected_torque_limit[0],
-                "MC_MPC_TMAX_P": args.expected_torque_limit[1],
-                "MC_MPC_TMAX_Y": args.expected_torque_limit[2],
-            }
-        )
-
-    else:
-        expected_parameters.update(
-            {
-                "MC_MSMC_CFG": 1,
-                "MC_MSMC_J_R": args.expected_inertia[0],
-                "MC_MSMC_J_P": args.expected_inertia[1],
-                "MC_MSMC_J_Y": args.expected_inertia[2],
-                "MC_MSMC_EFF_R": args.expected_effectiveness[0],
-                "MC_MSMC_EFF_P": args.expected_effectiveness[1],
-                "MC_MSMC_EFF_Y": args.expected_effectiveness[2],
-                "MC_MSMC_C_R": args.expected_smc_c[0],
-                "MC_MSMC_C_P": args.expected_smc_c[1],
-                "MC_MSMC_C_Y": args.expected_smc_c[2],
-                "MC_MSMC_ETA_R": args.expected_smc_eta[0],
-                "MC_MSMC_ETA_P": args.expected_smc_eta[1],
-                "MC_MSMC_ETA_Y": args.expected_smc_eta[2],
-                "MC_MSMC_BND_R": args.expected_smc_boundary[0],
-                "MC_MSMC_BND_P": args.expected_smc_boundary[1],
-                "MC_MSMC_BND_Y": args.expected_smc_boundary[2],
-                "MC_MSMC_KS_R": args.expected_smc_ks[0],
-                "MC_MSMC_KS_P": args.expected_smc_ks[1],
-                "MC_MSMC_KS_Y": args.expected_smc_ks[2],
-                "MC_MSMC_RSPD_L": args.expected_smc_rate_sp_derivative,
-                "MC_SMC_LPF": args.expected_smc_lpf,
-                "MC_SMC_SLEW": args.expected_smc_slew,
-                "MC_MSMC_TMAX_R": args.expected_torque_limit[0],
-                "MC_MSMC_TMAX_P": args.expected_torque_limit[1],
-                "MC_MSMC_TMAX_Y": args.expected_torque_limit[2],
-            }
-        )
+    expected_parameters = expected_controller_parameters(args)
 
     for name, expected in expected_parameters.items():
         actual = result["parameters"].get(name)
@@ -328,10 +334,25 @@ def main():
     parser.add_argument("--parameter-relative-tolerance", type=float, default=0.01)
     parser.add_argument("--parameter-absolute-tolerance", type=float, default=1e-5)
     parser.add_argument("--require-torque-all", action="store_true")
+    parser.add_argument(
+        "--apply-expected-parameters",
+        action="store_true",
+        help="apply the expected controller signature to a locally launched UDP SITL instance",
+    )
     args = parser.parse_args()
 
     if args.repeat < 1 and not args.log:
         raise ValueError("--repeat must be at least 1")
+
+    if args.apply_expected_parameters and args.log:
+        raise ValueError("--apply-expected-parameters cannot be used with --log")
+
+    if args.apply_expected_parameters and not args.connection.startswith("udp:"):
+        raise ValueError("--apply-expected-parameters is restricted to UDP SITL connections")
+
+    args.parameter_overrides = (
+        expected_controller_parameters(args) if args.apply_expected_parameters else {}
+    )
 
     config = GridConfig(args.move, args.hold, args.accel_scale)
     logs = []
