@@ -194,6 +194,34 @@ initial hypotheses for the real vehicle until measured.
   torque-effectiveness, and actuator lag. Its current state authorizes only
   props-off response tests and controlled model-identification preparation.
 
+### First real SMC low-flight evidence (2026-07-11)
+
+- Log `08_28_00` ran mode 2 with `model_valid=true` for `38.9 s` armed and
+  `32.6 s` detected airborne. Vertical span was `0.338 m`.
+- Roll and pitch remained bounded: maximum absolute attitude was `2.33/1.73
+  deg`, rate-error RMS was `0.092/0.090 rad/s`, and neither SMC axis clipped.
+- Yaw was not acceptable. With centered yaw input, the vehicle accumulated
+  approximately `120 deg` heading excursion; yaw rate-error RMS was
+  `0.354 rad/s` and SMC yaw torque reached `0.0854` of the `0.10` limit.
+- Airborne allocation was fully achieved with zero unallocated torque, no motor
+  command below `0.02` or above `0.95`, and all motors retained authority. The
+  SMC command opposed measured yaw rate for `77.1%` of active samples, so the
+  evidence indicates underestimated real yaw authority scaling rather than
+  allocator saturation or a controller sign reversal.
+- A low-confidence local fit estimated `MC_MSMC_EFF_Y` near `0.71` (`R2=0.098`).
+  A conservative bounded update to `0.8` increases yaw correction by `25%`
+  while leaving `MC_MSMC_TMAX_Y=0.10` unchanged. Its gain-sanity ratio is
+  `1.25` relative to PID and remains inside the `0.5-1.5` envelope.
+- The `EFF_Y=0.8` card passed exact-state log `08_38_17` and optical-flow/range
+  log `08_39_50`. Worst simulated yaw settling was `0.84 s`; internal yaw-limit
+  occupancy remained <= `1.63%`, with no failsafe, allocator miss, or motor
+  saturation.
+- The real 4S battery fell to `13.13 V`, reported emergency warning level, and
+  spent `62/162` airborne battery samples at warning level 3. Recharge or
+  replace it before any further motor run. The next test must be the originally
+  specified `5-10 cm`, `1-2 s` low lift, followed by immediate disarm and log
+  review.
+
 ## Physical-identification gate
 
 Before increasing authority, measure:
