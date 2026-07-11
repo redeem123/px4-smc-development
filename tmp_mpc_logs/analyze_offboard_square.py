@@ -670,7 +670,7 @@ def print_result(result, final_s, compact):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("logs", nargs="+", type=Path)
-    parser.add_argument("--takeoff-hold", type=float, default=7.0)
+    parser.add_argument("--takeoff-hold", type=float, default=8.0)
     parser.add_argument("--move", type=float, default=3.2)
     parser.add_argument("--hold", type=float, default=2.0)
     parser.add_argument("--side", type=float, default=0.6)

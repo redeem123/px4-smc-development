@@ -90,7 +90,7 @@ Use a bounded excitation log instead:
 
 ```sh
 .venv/bin/python Tools/uav985_rate_model_identification.py flight.ulg \
-  --axis yaw --inertia 0.0135,0.0118,0.0170
+  --axis yaw --inertia 0.04197,0.03669,0.05285
 ```
 
 The tool excludes landed, allocation-limited, and motor-saturated samples. It
@@ -99,21 +99,26 @@ per-axis `MC_MPC_EFF_*` and `MC_MSMC_EFF_*` values. It never derives inertia
 from a controller gain and never sets `MC_MSMC_CFG`. Thrust-stand and motor
 step-response measurements remain preferable.
 
-## UAV985 SITL profile
+## Measured-envelope SITL profile
 
-The exact `gz_uav985` profile uses:
+The legacy-named `gz_uav985` profile now represents the measured `1.8 kg`,
+`0.30 m`-arm vehicle and uses:
 
 ```text
-J       = [0.0135, 0.0118, 0.0170] kg m^2
-EFF     = [4.03, 4.03, 0.876] Nm/unit
+J       = [0.04197, 0.03669, 0.05285] kg m^2 (similarity estimate)
+EFF     = [7.107, 7.107, 1.184] Nm/unit (simulated hover-local)
 TMAX    = [0.20, 0.20, 0.10]
-C       = [3.0, 3.0, 1.5]
-ETA     = [6.0, 6.0, 2.0] rad/s^2
-BOUND   = [0.15, 0.15, 0.20] rad/s
-KS      = [1.5, 1.5, 0.5] 1/s
+C       = [2.0, 2.0, 1.0]
+ETA     = [7.0, 8.2, 0.7] rad/s^2
+BOUND   = [0.50, 0.50, 0.20] rad/s
+KS      = [1.0, 1.0, 1.0] 1/s
 LPF     = 20 Hz
 SLEW    = 15 unit/s
 ```
+
+These gains preserve local normalized-torque slopes near
+`0.10/0.10/0.245`. They do not convert the estimated inertia or unmeasured
+propulsion constants into identified real-aircraft values.
 
 Verify the assembled model contract:
 
@@ -133,13 +138,14 @@ SITL process, flies a minimum-jerk square for roll/pitch excitation, then
 commands `+30/-30/home` yaw steps. It rejects insufficient excitation, rate
 error, oscillation, SMC limit occupancy, yaw settling/final error, yaw-induced
 position drift, invalid runtime SMC status, allocator error, model mismatch,
-failsafe, or position error.
+failsafe, position error, or terminal airborne roll/pitch oscillation growth.
 
-On 2026-07-11, two exact-model mode-2 repeats passed with `0.0344-0.0353 m`
-square tracking RMS, `0.98-1.09 s` worst yaw settling, `1.14-1.36 deg` worst
-final yaw error, and `0.54%` worst internal yaw-limit occupancy. Two
-`gz_uav985_flow` repeats also passed; worst yaw-hold position error was
-`0.117 m`.
+Historical passes from 2026-07-11 used the obsolete `0.985 kg`, `0.230 m`
+model. After correcting the target to `1.8 kg`, `0.30 m`, the installed
+Pixhawk card fails yaw acceptance. The model-consistent card above passes all
+whole-maneuver gates except worst yaw settling (`1.84 s` versus `1.50 s`), but
+also fails the terminal pitch rate-error and oscillation-growth gates. This is
+an open propulsion/dynamics result, not a flight authorization.
 
 ## QGroundControl takeoff cap
 

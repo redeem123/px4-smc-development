@@ -369,7 +369,7 @@ def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--connection", default="udp:127.0.0.1:14540")
     parser.add_argument("--baud", type=int, default=115200)
-    parser.add_argument("--takeoff-hold", type=float, default=7.0)
+    parser.add_argument("--takeoff-hold", type=float, default=8.0)
     parser.add_argument("--move", type=float, default=3.2)
     parser.add_argument("--hold", type=float, default=2.0)
     parser.add_argument("--side", type=float, default=0.6)

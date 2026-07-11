@@ -186,7 +186,7 @@ def main():
         help="move,hold,accel_scale. Can be repeated.",
     )
     parser.add_argument("--connection", default="udp:127.0.0.1:14540")
-    parser.add_argument("--takeoff-hold", type=float, default=7.0)
+    parser.add_argument("--takeoff-hold", type=float, default=8.0)
     parser.add_argument("--side", type=float, default=0.6)
     parser.add_argument("--altitude", type=float, default=2.0)
     parser.add_argument("--yaw-step-deg", type=float, default=0.0)

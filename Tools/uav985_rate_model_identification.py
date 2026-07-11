@@ -100,7 +100,9 @@ def fit_axis(timestamps, command, rate, physical_torque, tau_candidates):
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
-    parser.add_argument("--inertia", type=parse_vector, default=np.array([0.0135, 0.0118, 0.0170]))
+    parser.add_argument(
+        "--inertia", type=parse_vector, default=np.array([0.04197, 0.03669, 0.05285])
+    )
     parser.add_argument("--tau-min", type=float, default=0.005)
     parser.add_argument("--tau-max", type=float, default=0.080)
     parser.add_argument("--tau-steps", type=int, default=151)

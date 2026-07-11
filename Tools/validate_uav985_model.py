@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Validate the UAV985 Gazebo assembly and rate-controller model contract."""
+"""Validate the measured-envelope Gazebo assembly and controller model contract."""
 
 import math
 import re
@@ -12,8 +12,11 @@ BASE_MODEL = ROOT / "Tools/simulation/gz/models/uav985_base/model.sdf"
 MOTOR_MODEL = ROOT / "Tools/simulation/gz/models/uav985/model.sdf"
 FLOW_MODEL = ROOT / "Tools/simulation/gz/models/uav985_flow/model.sdf"
 AIRFRAME = ROOT / "ROMFS/px4fmu_common/init.d-posix/airframes/4022_gz_uav985"
-TARGET_MASS = 0.985
-TARGET_INERTIA = (0.0135, 0.0118, 0.0170)
+TARGET_MASS = 1.8
+TARGET_ARM_LENGTH = 0.30
+# Provisional similarity estimate: J_new = J_old * (m_new/m_old) * (r_new/r_old)^2.
+TARGET_INERTIA = (0.04197173097, 0.03668640189, 0.05285329086)
+TARGET_SMC_LOCAL_GAIN = (0.10, 0.10, 0.245)
 
 
 def numeric_text(parent, path):
@@ -62,6 +65,15 @@ def assembled_model():
             total_inertia[axis] += link["inertia"][axis] + link["mass"] * offsets[axis]
 
     return total_mass, center_of_mass, total_inertia
+
+
+def rotor_positions():
+    root = ET.parse(BASE_MODEL).getroot()
+    return {
+        link.attrib["name"]: pose(link)
+        for link in root.findall("./model/link")
+        if link.attrib["name"].startswith("rotor_")
+    }
 
 
 def motor_parameters():
@@ -128,6 +140,7 @@ def torque_effectiveness(command, speed_min, speed_max, arm_component, motors):
 
 def main():
     mass, center_of_mass, inertia = assembled_model()
+    sdf_rotors = rotor_positions()
     motors = motor_parameters()
     accessory_mass = flow_accessory_mass()
     parameters = airframe_parameters()
@@ -142,22 +155,41 @@ def main():
     )
 
     if accessory_mass > 1e-5:
-        raise RuntimeError(f"flow sensor links double-count CAD mass: {accessory_mass:.9f} kg")
+        raise RuntimeError(f"flow sensor links double-count all-up mass: {accessory_mass:.9f} kg")
 
     for axis, actual, expected in zip("xyz", inertia, TARGET_INERTIA):
         assert_close(f"assembled J{axis}{axis}", actual, expected)
 
+    if len(sdf_rotors) != 4:
+        raise RuntimeError(f"expected four SDF rotors, found {len(sdf_rotors)}")
+
+    for name, position in sdf_rotors.items():
+        assert_close(
+            f"{name} center-to-motor arm",
+            math.hypot(position[0], position[1]),
+            TARGET_ARM_LENGTH,
+        )
+
     arm_component = parameters["CA_ROTOR0_PX"]
+    assert_close("center-to-motor arm", math.sqrt(2.0) * arm_component, TARGET_ARM_LENGTH)
     speed_min = parameters["SIM_GZ_EC_MIN1"]
     speed_max = parameters["SIM_GZ_EC_MAX1"]
     hover_speed = math.sqrt(TARGET_MASS * 9.80665 / (4.0 * motors["motorConstant"]))
     hover_command = (hover_speed - speed_min) / (speed_max - speed_min)
     effectiveness = torque_effectiveness(hover_command, speed_min, speed_max, arm_component, motors)
 
+    for rotor_index in range(4):
+        allocator_arm = math.hypot(
+            parameters[f"CA_ROTOR{rotor_index}_PX"],
+            parameters[f"CA_ROTOR{rotor_index}_PY"],
+        )
+        assert_close(f"allocator rotor {rotor_index} arm", allocator_arm, TARGET_ARM_LENGTH)
+
     if parameters.get("MC_MSMC_CFG") != 1.0:
         raise RuntimeError("UAV985 SMC physical model card is not acknowledged")
 
     assert_close("MIS_TKO_ALT_MAX", parameters["MIS_TKO_ALT_MAX"], 1.0)
+    assert_close("MPC_THR_HOVER", parameters["MPC_THR_HOVER"], hover_command, relative_tolerance=0.02)
 
     for prefix in ("MC_MPC_J", "MC_MSMC_J"):
         for suffix, expected in zip("RPY", TARGET_INERTIA):
@@ -166,6 +198,19 @@ def main():
     for prefix in ("MC_MPC_EFF", "MC_MSMC_EFF"):
         for suffix, expected in zip("RPY", effectiveness):
             assert_close(f"{prefix}_{suffix}", parameters[f"{prefix}_{suffix}"], expected, relative_tolerance=0.02)
+
+    smc_local_gain = []
+
+    for suffix in "RPY":
+        gain = parameters[f"MC_MSMC_J_{suffix}"] / parameters[f"MC_MSMC_EFF_{suffix}"] * (
+            parameters[f"MC_MSMC_C_{suffix}"]
+            + parameters[f"MC_MSMC_ETA_{suffix}"] / parameters[f"MC_MSMC_BND_{suffix}"]
+            + parameters[f"MC_MSMC_KS_{suffix}"]
+        )
+        smc_local_gain.append(gain)
+
+    for suffix, actual, expected in zip("RPY", smc_local_gain, TARGET_SMC_LOCAL_GAIN):
+        assert_close(f"SMC local gain {suffix}", actual, expected, relative_tolerance=0.02)
 
     lag = 0.5 * (motors["timeConstantUp"] + motors["timeConstantDown"])
     assert_close("MC_MPC_TAU", parameters["MC_MPC_TAU"], lag, relative_tolerance=0.35)
@@ -178,6 +223,10 @@ def main():
         "hover-local-effectiveness="
         f"({effectiveness[0]:.4f},{effectiveness[1]:.4f},{effectiveness[2]:.4f})Nm/unit"
     )
+    print(
+        "smc-local-gain="
+        f"({smc_local_gain[0]:.4f},{smc_local_gain[1]:.4f},{smc_local_gain[2]:.4f})"
+    )
 
     for command in (0.30, 0.50):
         local_effectiveness = torque_effectiveness(command, speed_min, speed_max, arm_component, motors)
@@ -188,8 +237,11 @@ def main():
             f"{local_effectiveness[2]:.4f})Nm/unit ({ratio:.3f}x hover)"
         )
 
-    print("contract scope: local hover model; identify the real vehicle in the intended thrust window")
-    print("UAV985 model contract: PASS")
+    print(
+        "contract scope: measured mass/arm, similarity-estimated inertia, and unmeasured propulsion; "
+        "identify the real vehicle in the intended thrust window"
+    )
+    print("Measured-envelope model contract: PASS")
 
 
 if __name__ == "__main__":

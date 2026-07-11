@@ -5,6 +5,11 @@ import sys
 from argparse import Namespace
 from pathlib import Path
 
+TOOLS_DIR = Path(__file__).resolve().parents[1] / "Tools"
+sys.path.insert(0, str(TOOLS_DIR))
+
+from analyze_smc_flight import analyze_log as analyze_airborne_log
+from analyze_smc_flight import check_result as check_airborne_result
 from analyze_offboard_square import AXES, analyze_log, print_result
 from run_uav985_trajectory_grid import GridConfig, run_one
 
@@ -268,7 +273,7 @@ def analysis_args(args, config):
 def main():
     parser = argparse.ArgumentParser()
     parser.add_argument("--connection", default="udp:127.0.0.1:14540")
-    parser.add_argument("--takeoff-hold", type=float, default=7.0)
+    parser.add_argument("--takeoff-hold", type=float, default=8.0)
     parser.add_argument("--move", type=float, default=3.2)
     parser.add_argument("--hold", type=float, default=2.0)
     parser.add_argument("--side", type=float, default=0.6)
@@ -303,6 +308,9 @@ def main():
     parser.add_argument("--max-rate-error-rms-yaw", type=float, default=0.10)
     parser.add_argument("--max-rate-osc-rms-rp", type=float, default=0.08)
     parser.add_argument("--max-rate-osc-rms-yaw", type=float, default=0.06)
+    parser.add_argument("--terminal-window", type=float, default=6.0)
+    parser.add_argument("--terminal-growth-floor", type=float, default=0.02)
+    parser.add_argument("--max-terminal-growth-ratio", type=float, default=2.5)
     parser.add_argument("--min-rate-excitation-rms-rp", type=float, default=0.01)
     parser.add_argument("--max-torque-limit-fraction", type=float, default=0.05)
     parser.add_argument("--max-smc-limit-fraction", type=float, default=0.05)
@@ -314,8 +322,12 @@ def main():
     parser.add_argument("--max-yaw-position-rms", type=float, default=0.08)
     parser.add_argument("--max-yaw-position-max", type=float, default=0.15)
     parser.add_argument("--torque-limit-tolerance", type=float, default=0.002)
-    parser.add_argument("--expected-inertia", type=parse_vector, default=(0.0135, 0.0118, 0.0170))
-    parser.add_argument("--expected-effectiveness", type=parse_vector, default=(4.03, 4.03, 0.876))
+    parser.add_argument(
+        "--expected-inertia", type=parse_vector, default=(0.04197, 0.03669, 0.05285)
+    )
+    parser.add_argument(
+        "--expected-effectiveness", type=parse_vector, default=(7.107, 7.107, 1.184)
+    )
     parser.add_argument("--expected-torque-limit", type=parse_vector, default=(0.20, 0.20, 0.10))
     parser.add_argument("--expected-mpc-q", type=parse_vector, default=(1.0, 1.0, 0.7))
     parser.add_argument("--expected-mpc-r", type=parse_vector, default=(1.0, 1.0, 1.0))
@@ -324,11 +336,11 @@ def main():
     parser.add_argument("--expected-horizon", type=int, default=8)
     parser.add_argument("--expected-mpc-slew", type=float, default=10.0)
     parser.add_argument("--expected-mpc-gyro", type=float, default=1.0)
-    parser.add_argument("--expected-smc-c", type=parse_vector, default=(3.0, 3.0, 1.5))
-    parser.add_argument("--expected-smc-eta", type=parse_vector, default=(6.0, 6.0, 2.0))
-    parser.add_argument("--expected-smc-boundary", type=parse_vector, default=(0.15, 0.15, 0.20))
-    parser.add_argument("--expected-smc-ks", type=parse_vector, default=(1.5, 1.5, 0.5))
-    parser.add_argument("--expected-smc-rate-sp-derivative", type=float, default=20.0)
+    parser.add_argument("--expected-smc-c", type=parse_vector, default=(2.0, 2.0, 1.0))
+    parser.add_argument("--expected-smc-eta", type=parse_vector, default=(7.0, 8.2, 0.7))
+    parser.add_argument("--expected-smc-boundary", type=parse_vector, default=(0.5, 0.5, 0.20))
+    parser.add_argument("--expected-smc-ks", type=parse_vector, default=(1.0, 1.0, 1.0))
+    parser.add_argument("--expected-smc-rate-sp-derivative", type=float, default=0.0)
     parser.add_argument("--expected-smc-lpf", type=float, default=20.0)
     parser.add_argument("--expected-smc-slew", type=float, default=15.0)
     parser.add_argument("--parameter-relative-tolerance", type=float, default=0.01)
@@ -369,6 +381,21 @@ def main():
         results.append(result)
         print_result(result, args.final_s, compact=False)
         failures = check_thresholds(result, args)
+        print("\nairborne_terminal_health:")
+        airborne_result = analyze_airborne_log(
+            log_path,
+            terminal_window_s=args.terminal_window,
+            cutoff_hz=args.rate_osc_cutoff,
+            growth_floor=args.terminal_growth_floor,
+        )
+        failures.extend(
+            check_airborne_result(
+                airborne_result,
+                max_oscillation_rms_rp=args.max_rate_osc_rms_rp,
+                max_rate_error_rms_rp=args.max_rate_error_rms_rp,
+                max_growth_ratio=args.max_terminal_growth_ratio,
+            )
+        )
 
         if failures:
             all_failures.append((log_path, failures))

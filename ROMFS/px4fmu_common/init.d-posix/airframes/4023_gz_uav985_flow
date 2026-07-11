@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @name Gazebo UAV985 CAD quadrotor with downward optical flow and distance sensor
+# @name Gazebo 1.8 kg quadrotor with downward optical flow and distance sensor
 #
 # @type Quadrotor
 #

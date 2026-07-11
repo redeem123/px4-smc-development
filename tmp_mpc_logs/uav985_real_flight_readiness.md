@@ -30,8 +30,9 @@ acceptance profile allows more estimator settling and must be run explicitly:
   --move 4.0 --hold 3.0 --accel-scale 0.60
 ```
 
-The exact-model profile is a `0.6 m` minimum-jerk square at `2.0 m`, with
-`3.2 s` moves, `2.0 s` holds, and acceleration feed-forward scale `0.75`.
+The exact-model profile is a `0.6 m` minimum-jerk square at `2.0 m`, with an
+`8.0 s` takeoff hold, `3.2 s` moves, `2.0 s` holds, and acceleration
+feed-forward scale `0.75`.
 The flow profile uses `4.0/3.0 s` moves/holds and scale `0.60`. Both hold the
 initial yaw during takeoff and the square, then command `+30/-30/home` yaw
 steps with `3.0 s` holds.
@@ -47,6 +48,8 @@ Acceptance requires:
 - roll/pitch rate excitation RMS >= `0.01 rad/s`
 - per-axis torque-limit occupancy <= `5%`
 - SMC internal torque-limit occupancy <= `5%`
+- final six-second airborne roll/pitch oscillation RMS <= `0.08 rad/s`,
+  rate-error RMS <= `0.12 rad/s`, and oscillation growth <= `2.5x`
 - commanded yaw excursion >= `50 deg`, yaw error RMS <= `18 deg`, final yaw
   error <= `5 deg`, settling <= `1.5 s`, and peak yaw rate >= `20 deg/s`
 - position error during yaw RMS/max <= `0.08/0.15 m`
@@ -109,18 +112,44 @@ Recheck an existing log without flying:
   --controller 2 --log /path/to/flight.ulg
 ```
 
-## Current UAV985 model signature
+## Current measured-envelope model signature
 
 ```text
-mass       0.985 kg
-J          0.0135, 0.0118, 0.0170 kg m^2
-EFF        4.03, 4.03, 0.876 Nm/unit
+mass       1.8 kg (approximate measurement)
+arm        0.30 m center-to-motor
+J          0.04197, 0.03669, 0.05285 kg m^2 (similarity estimate)
+EFF        7.107, 7.107, 1.184 Nm/unit (simulated hover-local)
 MPC_TAU    0.025 s
 TMAX       0.20, 0.20, 0.10 normalized torque
 ```
 
-These effectiveness and lag values are valid for `gz_uav985`. They are only
-initial hypotheses for the real vehicle until measured.
+The mass and arm values reflect the current real vehicle. The inertia is only a
+geometric-similarity estimate, and effectiveness and lag remain simulated
+propulsion hypotheses until measured. Historical `gz_uav985` logs before this
+change use the obsolete `0.985 kg`, `0.230 m` model and are not evidence for the
+current measured-envelope simulator.
+
+### Measured-envelope simulation evidence (2026-07-11)
+
+- The installed Pixhawk card (`J=0.01/0.01/0.02`, `EFF=1/1/0.8`) no longer
+  passes after correcting the simulated mass and arm. Exact-state log
+  `12_30_52` failed yaw RMS/final-error/settling and the seven-second takeoff
+  gate; optical-flow log `12_32_35` failed yaw final error/settling and takeoff.
+- A model-consistent simulation card uses the provisional physical `J/EFF`
+  values with `C=2/2/1`, `ETA=7/8.2/0.7`, `BND=0.5/0.5/0.2`, and `KS=1/1/1`.
+  This preserves local normalized-torque gains near `0.10/0.10/0.245`.
+  Exact-state log `12_50_33` failed worst yaw settling (`1.84 s` versus
+  `1.50 s`) and the integrated terminal pitch gate (rate-error RMS `0.1219
+  rad/s`, oscillation growth `3.66x`) at `TMAX_Y=0.10`.
+- Raising simulated `TMAX_Y` to `0.15` improved yaw RMS and peak rate but still
+  missed settling at `1.64 s`; the authority increase is rejected and was not
+  applied to hardware.
+- The installed card passes the corrected rigid model's terminal roll/pitch
+  gate, while the model-consistent candidate exposes a smaller late pitch
+  transient near `4.17 Hz`. Neither reproduces the real log's larger growing
+  `4.7 Hz` oscillation. Measured actuator lag, structural dynamics, or dedicated
+  excitation data are still required. No Pixhawk parameter was changed from
+  this simulation work.
 
 ## Props-off bench gate
 
@@ -251,7 +280,7 @@ Before increasing authority, measure:
 
 1. CAD body-axis mapping and all-up mass/inertia with the actual battery,
    payload, optical-flow sensor, and range sensor. Confirm whether the quoted
-   `0.985 kg` already contains those sensors.
+   `1.8 kg` already contains those sensors.
 2. Command-to-RPM and thrust-to-RPM over battery voltage on a thrust stand.
 3. Reaction torque or `KM/KF`, especially for yaw.
 4. Motor/ESC spin-up and spin-down time constants.
@@ -261,7 +290,7 @@ Analyze the excitation:
 
 ```sh
 .venv/bin/python Tools/uav985_rate_model_identification.py flight.ulg \
-  --axis yaw --inertia 0.0135,0.0118,0.0170
+  --axis yaw --inertia 0.04197,0.03669,0.05285
 ```
 
 The tool uses airborne, allocation-achieved, non-saturated samples and prints
