@@ -3,6 +3,30 @@
 This is the gate for controlled research flights in rate-controller modes 1
 and 2. A SITL pass is necessary but does not replace physical identification.
 
+## 2026-07-12 matched PID/SMC flights
+
+The two newest onboard logs were downloaded as
+`tmp_smc_logs/2026-07-12_00_51_37_pid.ulg` and
+`tmp_smc_logs/2026-07-12_00_53_26_smc.ulg`. Logged parameters independently
+verify controller modes `0` and `2`, respectively.
+
+The PID flight held yaw with `0.0479 rad/s` terminal yaw-rate-error RMS. Its
+airborne yaw torque averaged approximately `-0.092`, demonstrating a large
+persistent aircraft bias. The SMC flight reached its configured `0.10` yaw
+torque ceiling and produced `0.8604 rad/s` terminal yaw-rate-error RMS. Roll and
+pitch remained inside the airborne health thresholds but were worse than PID.
+
+The installed SMC card had `MC_MSMC_ILIM_Y=0.3`. With `J_Y/EFF_Y=0.025`,
+`C_Y=1.5`, `ETA_Y=1.5`, and `KS_Y=1`, that integral range cannot generate the
+PID-demonstrated yaw trim near zero rate error. A closed-loop rate-control unit
+test now reproduces a constant `0.092` yaw disturbance and verifies rejection
+with `MC_MSMC_ILIM_Y=2.0` and `MC_MSMC_TMAX_Y=0.15`.
+
+Those two values were installed and independently read back on the disarmed,
+battery-free Pixhawk. `MC_RATE_CTRL_T` was restored to `0`; selecting SMC for
+the next test remains a deliberate disarmed action. This is a targeted yaw-bias
+correction, not a declaration that the full real-airframe model is identified.
+
 ## Exact-model SITL
 
 Validate the assembled mass, inertia, actuator constants, and controller model:
@@ -115,10 +139,13 @@ Recheck an existing log without flying:
 ## Current measured-envelope model signature
 
 ```text
-mass       1.8 kg (approximate measurement)
+mass       1.7352 kg (measured as 1166.4 + 568.8 g)
 arm        0.30 m center-to-motor
-J          0.04197, 0.03669, 0.05285 kg m^2 (similarity estimate)
-EFF        7.107, 7.107, 1.184 Nm/unit (simulated hover-local)
+J          0.04046, 0.03537, 0.05095 kg m^2 (similarity estimate)
+EFF        6.978, 6.978, 1.163 Nm/unit (simulated hover-local)
+C          2.0, 2.0, 2.0 (simulator candidate)
+ETA        7.0, 8.2, 1.0 (simulator candidate)
+TMAX       0.20, 0.20, 0.15 Nm (simulator candidate)
 MPC_TAU    0.025 s
 TMAX       0.20, 0.20, 0.10 normalized torque
 ```
@@ -280,7 +307,7 @@ Before increasing authority, measure:
 
 1. CAD body-axis mapping and all-up mass/inertia with the actual battery,
    payload, optical-flow sensor, and range sensor. Confirm whether the quoted
-   `1.8 kg` already contains those sensors.
+   `1.7352 kg` already contains those sensors.
 2. Command-to-RPM and thrust-to-RPM over battery voltage on a thrust stand.
 3. Reaction torque or `KM/KF`, especially for yaw.
 4. Motor/ESC spin-up and spin-down time constants.
@@ -290,7 +317,7 @@ Analyze the excitation:
 
 ```sh
 .venv/bin/python Tools/uav985_rate_model_identification.py flight.ulg \
-  --axis yaw --inertia 0.04197,0.03669,0.05285
+  --axis yaw --inertia 0.04046,0.03537,0.05095
 ```
 
 The tool uses airborne, allocation-achieved, non-saturated samples and prints

@@ -12,11 +12,11 @@ BASE_MODEL = ROOT / "Tools/simulation/gz/models/uav985_base/model.sdf"
 MOTOR_MODEL = ROOT / "Tools/simulation/gz/models/uav985/model.sdf"
 FLOW_MODEL = ROOT / "Tools/simulation/gz/models/uav985_flow/model.sdf"
 AIRFRAME = ROOT / "ROMFS/px4fmu_common/init.d-posix/airframes/4022_gz_uav985"
-TARGET_MASS = 1.8
+TARGET_MASS = 1.7352
 TARGET_ARM_LENGTH = 0.30
 # Provisional similarity estimate: J_new = J_old * (m_new/m_old) * (r_new/r_old)^2.
-TARGET_INERTIA = (0.04197173097, 0.03668640189, 0.05285329086)
-TARGET_SMC_LOCAL_GAIN = (0.10, 0.10, 0.245)
+TARGET_INERTIA = (0.04046074866, 0.03536569142, 0.05095057239)
+TARGET_SMC_LOCAL_GAIN = (0.0985, 0.0983, 0.3505)
 
 
 def numeric_text(parent, path):

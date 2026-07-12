@@ -9,37 +9,37 @@ remain provisional and must not be presented as identified hardware values.
 
 | Quantity | Value | Status |
 |---|---:|---|
-| All-up mass | `1.8 kg` | user measurement, approximate |
+| All-up mass | `1.7352 kg` | user measurement (`1166.4 + 568.8 g`) |
 | Center-to-motor arm length | `0.300 m` | user measurement |
 | Rotor x/y offset | `0.212132 m` | derived as `0.300/sqrt(2)` |
-| Total `Jxx` | `0.041972 kg m^2` | similarity estimate |
-| Total `Jyy` | `0.036686 kg m^2` | similarity estimate |
-| Total `Jzz` | `0.052853 kg m^2` | similarity estimate |
+| Total `Jxx` | `0.040461 kg m^2` | similarity estimate |
+| Total `Jyy` | `0.035366 kg m^2` | similarity estimate |
+| Total `Jzz` | `0.050951 kg m^2` | similarity estimate |
 | Rotor assembly mass | `0.022 kg` each | retained legacy assumption |
 | Rotor local inertia | `6.998e-6, 2.2647e-5, 2.1617e-5 kg m^2` | retained legacy assumption |
 
 The provisional inertia scales the previous tensor by
-`(1.8/0.985) * (0.300/0.230)^2 = 3.109`. This assumes geometrically similar mass
+`(1.7352/0.985) * (0.300/0.230)^2 = 2.997`. This assumes geometrically similar mass
 distribution. Mass and arm length alone do not determine inertia, so bifilar or
 CAD measurement is still required. The controller uses `x=roll`, `y=pitch`,
 `z=yaw`; swapping physical axes is a model error, not a tuning adjustment.
 
 ## Gazebo link split
 
-The four assumed rotor links total `0.088 kg`, so the base link is `1.712 kg`.
+The four assumed rotor links total `0.088 kg`, so the base link is `1.6472 kg`.
 With the rotors at `z=0.060 m`, the assembled center of mass is `z=0.0029333 m` relative
 to the base-link origin. Applying the parallel-axis theorem gives the required
 base-link local inertia:
 
 | Base-link quantity | Value |
 |---|---:|
-| `Ixx` | `0.03768242697 kg m^2` |
-| `Iyy` | `0.03233450189 kg m^2` |
-| `Izz` | `0.04484682286 kg m^2` |
+| `Ixx` | `0.03617144466 kg m^2` |
+| `Iyy` | `0.03101379142 kg m^2` |
+| `Izz` | `0.04294410439 kg m^2` |
 
 Those base values assemble to the estimated totals above. Putting total inertia
 directly on the base link would double-count the rotor contributions. The
-current contract assumes that the quoted `1.8 kg` all-up total already contains
+current contract assumes that the quoted `1.7352 kg` all-up total already contains
 the optical-flow and range-sensor hardware. Under that assumption,
 `uav985_flow` uses `1e-6 kg` fixed sensor links for simulation attachment only;
 merging the shared `0.050 kg` optical-flow and `0.020 kg` LW20 models would
@@ -54,16 +54,16 @@ The current propeller constants are `KF=1.1e-5 N s^2` and
 `KM=2.75e-7 Nm s^2`, equivalently `momentConstant=KM/KF=0.025 m`. The simulated
 ESC command maps linearly from `150` to `1000 rad/s`.
 
-At `1.8 kg`, the nominal hover speed is `633.4 rad/s`, normalized hover command
-is `0.5687`, and the local thrust slope is `11.84 N` per normalized motor
+At `1.7352 kg`, the nominal hover speed is `621.9 rad/s`, normalized hover command
+is `0.5552`, and the local thrust slope is `11.63 N` per normalized motor
 command. With the PX4 normalized quad-X allocator, this gives the hover
 linearized torque effectiveness:
 
 | Axis | Effectiveness |
 |---|---:|
-| Roll | `7.107 Nm/unit` |
-| Pitch | `7.107 Nm/unit` |
-| Yaw | `1.184 Nm/unit` |
+| Roll | `6.978 Nm/unit` |
+| Pitch | `6.978 Nm/unit` |
+| Yaw | `1.163 Nm/unit` |
 
 The motor plugin has `12.5 ms` spin-up and `25 ms` spin-down constants. The
 controller uses a conservative symmetric `25 ms` lag matching the slower
@@ -84,7 +84,7 @@ rate-axis excitation:
 
 ```sh
 .venv/bin/python Tools/uav985_rate_model_identification.py flight.ulg \
-  --axis yaw --inertia 0.04197,0.03669,0.05285
+  --axis yaw --inertia 0.04046,0.03537,0.05095
 ```
 
 The tool fits Euler rigid-body torque, actuator lag, linear rate damping, and a
@@ -103,6 +103,11 @@ After independently verifying mass/inertia, propulsion data, every accepted
 axis, gains, and torque limits, set `MC_MSMC_CFG=1` as the final card step.
 Commander blocks mode-2 arming while the acknowledgment or runtime model status
 is invalid.
+
+The corrected-mass SITL yaw candidate uses `C_Y=2.0`, `ETA_Y=1.0`, and
+`TMAX_Y=0.15`. These are simulator acceptance values, not identified real-aircraft
+parameters; do not copy them to hardware without propulsion and yaw-effectiveness
+identification.
 
 ## Measurements still required for the real vehicle
 

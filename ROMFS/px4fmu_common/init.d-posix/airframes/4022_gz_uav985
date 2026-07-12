@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-# @name Gazebo 1.8 kg measured-envelope quadrotor
+# @name Gazebo 1.735 kg measured-envelope quadrotor
 #
 # @type Quadrotor
 #
@@ -47,7 +47,7 @@ param set-default SIM_GZ_EC_MAX2 1000
 param set-default SIM_GZ_EC_MAX3 1000
 param set-default SIM_GZ_EC_MAX4 1000
 
-param set-default MPC_THR_HOVER 0.57
+param set-default MPC_THR_HOVER 0.555
 param set-default MPC_TKO_RAMP_T 1.0
 param set-default NAV_DLL_ACT 0
 param set-default COM_RC_IN_MODE 4
@@ -56,13 +56,13 @@ param set-default MIS_TKO_ALT_MAX 1.0
 param set-default MC_RATE_CTRL_T 1
 param set-default MC_MSMC_CFG 1
 
-param set-default MC_MPC_J_R 0.04197
-param set-default MC_MPC_J_P 0.03669
-param set-default MC_MPC_J_Y 0.05285
+param set-default MC_MPC_J_R 0.040461
+param set-default MC_MPC_J_P 0.035366
+param set-default MC_MPC_J_Y 0.050951
 
-param set-default MC_MPC_EFF_R 7.107
-param set-default MC_MPC_EFF_P 7.107
-param set-default MC_MPC_EFF_Y 1.184
+param set-default MC_MPC_EFF_R 6.978
+param set-default MC_MPC_EFF_P 6.978
+param set-default MC_MPC_EFF_Y 1.163
 
 param set-default MC_MPC_GYRO 1.0
 param set-default MC_MPC_TAU 0.025
@@ -90,21 +90,21 @@ param set-default MC_MPC_TMAX_R 0.20
 param set-default MC_MPC_TMAX_P 0.20
 param set-default MC_MPC_TMAX_Y 0.10
 
-param set-default MC_MSMC_J_R 0.04197
-param set-default MC_MSMC_J_P 0.03669
-param set-default MC_MSMC_J_Y 0.05285
+param set-default MC_MSMC_J_R 0.040461
+param set-default MC_MSMC_J_P 0.035366
+param set-default MC_MSMC_J_Y 0.050951
 
-param set-default MC_MSMC_EFF_R 7.107
-param set-default MC_MSMC_EFF_P 7.107
-param set-default MC_MSMC_EFF_Y 1.184
+param set-default MC_MSMC_EFF_R 6.978
+param set-default MC_MSMC_EFF_P 6.978
+param set-default MC_MSMC_EFF_Y 1.163
 
 param set-default MC_MSMC_C_R 2.0
 param set-default MC_MSMC_C_P 2.0
-param set-default MC_MSMC_C_Y 1.0
+param set-default MC_MSMC_C_Y 2.0
 
 param set-default MC_MSMC_ETA_R 7.0
 param set-default MC_MSMC_ETA_P 8.2
-param set-default MC_MSMC_ETA_Y 0.7
+param set-default MC_MSMC_ETA_Y 1.0
 
 param set-default MC_MSMC_BND_R 0.50
 param set-default MC_MSMC_BND_P 0.50
@@ -121,7 +121,7 @@ param set-default MC_MSMC_ILIM_Y 0.30
 
 param set-default MC_MSMC_TMAX_R 0.20
 param set-default MC_MSMC_TMAX_P 0.20
-param set-default MC_MSMC_TMAX_Y 0.10
+param set-default MC_MSMC_TMAX_Y 0.15
 
 param set-default MC_SMC_LPF 20.0
 param set-default MC_SMC_SLEW 15.0

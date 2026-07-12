@@ -394,6 +394,39 @@ TEST(RateControlTest, ModelBasedSmcUsesIndependentTorqueLimit)
 	EXPECT_FLOAT_EQ(torque(2), 0.1f);
 }
 
+TEST(RateControlTest, ModelBasedSmcYawIntegralRejectsMeasuredTorqueBias)
+{
+	constexpr float dt = 0.0015f;
+	constexpr float yaw_disturbance = 0.092f;
+	RateControl rate_control;
+	SmcTestParameters parameters;
+	parameters.inertia = Vector3f(0.01f, 0.01f, 0.02f);
+	parameters.control_effectiveness = Vector3f(1.f, 1.f, 0.8f);
+	parameters.c = Vector3f(2.f, 2.f, 1.5f);
+	parameters.eta = Vector3f(3.5f, 3.5f, 1.5f);
+	parameters.boundary = Vector3f(0.5f, 0.5f, 0.2f);
+	parameters.ks = Vector3f(1.f, 1.f, 1.f);
+	parameters.integral_limit = Vector3f(0.3f, 0.3f, 2.f);
+	parameters.torque_limit = Vector3f(0.2f, 0.2f, 0.15f);
+	ASSERT_TRUE(configureModelBasedSmc(rate_control, parameters));
+	ASSERT_TRUE(rate_control.setControllerType(2));
+
+	Vector3f rates;
+	Vector3f torque;
+
+	for (int sample = 0; sample < 10000; sample++) {
+		torque = rate_control.update(rates, Vector3f(), Vector3f(), dt, false);
+		rates(2) += parameters.control_effectiveness(2) / parameters.inertia(2)
+			    * (torque(2) + yaw_disturbance) * dt;
+	}
+
+	EXPECT_NEAR(rates(2), 0.f, 0.01f);
+	EXPECT_NEAR(torque(2), -yaw_disturbance, 0.005f);
+	rate_ctrl_status_s status{};
+	rate_control.getRateControlStatus(status);
+	EXPECT_GT(fabsf(status.yawspeed_integ), 0.3f);
+}
+
 TEST(RateControlTest, ModelBasedSmcSafeguardUpdatePreservesSlewReference)
 {
 	RateControl rate_control;
