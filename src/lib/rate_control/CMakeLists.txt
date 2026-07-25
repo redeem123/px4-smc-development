@@ -40,6 +40,6 @@ px4_add_library(RateControl
 set_property(GLOBAL APPEND PROPERTY PX4_MODULE_CONFIG_FILES ${CMAKE_CURRENT_SOURCE_DIR}/gain_compression_params.yaml)
 target_compile_options(RateControl PRIVATE ${MAX_CUSTOM_OPT_LEVEL})
 target_include_directories(RateControl PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
-target_link_libraries(RateControl PRIVATE mathlib)
+target_link_libraries(RateControl PRIVATE mathlib motion_planning)
 
 px4_add_unit_gtest(SRC rate_control_test.cpp LINKLIBS RateControl)
