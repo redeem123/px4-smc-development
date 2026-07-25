@@ -37,8 +37,10 @@ px4_add_module(
 	COMPILE_FLAGS
 		${MAX_CUSTOM_OPT_LEVEL}
 	SRCS
+		AstsmcAllocatorFeedback.hpp
 		MulticopterRateControl.cpp
 		MulticopterRateControl.hpp
+		RateControlLandingPolicy.hpp
 	MODULE_CONFIG
 		mc_acro_params.yaml
 		mc_rate_control_params.yaml
@@ -48,3 +50,6 @@ px4_add_module(
 		RateControl
 		px4_work_queue
 	)
+
+px4_add_unit_gtest(SRC RateControlLandingPolicyTest.cpp)
+px4_add_unit_gtest(SRC AstsmcAllocatorFeedbackTest.cpp)

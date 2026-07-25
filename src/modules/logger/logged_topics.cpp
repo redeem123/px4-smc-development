@@ -165,6 +165,9 @@ void LoggedTopics::add_default_topics()
 	// multi topics
 	add_optional_topic_multi("actuator_outputs", 100, 3);
 	add_optional_topic_multi("airspeed_wind", 1000, 4);
+	add_optional_topic("astsmc_allocator_status", 200);
+	add_optional_topic("astsmc_safety_status", 200);
+	add_optional_topic("astsmc_status", 200);
 	add_optional_topic_multi("control_allocator_status", 200, 2);
 	add_optional_topic_multi("rate_ctrl_status", 200, 2);
 	add_optional_topic_multi("sensor_hygrometer", 500, 4);
@@ -293,6 +296,10 @@ void LoggedTopics::add_high_rate_topics()
 {
 	// maximum rate to analyze fast maneuvers (e.g. for racing)
 	add_topic("manual_control_setpoint");
+	add_optional_topic("astsmc_allocator_status", 5);
+	add_optional_topic("astsmc_safety_status", 5);
+	add_optional_topic("astsmc_status", 5);
+	add_optional_topic_multi("control_allocator_status", 5, 2);
 	add_topic_multi("rate_ctrl_status", 20, 2);
 	add_topic("sensor_combined");
 	add_topic("vehicle_angular_velocity");
@@ -384,6 +391,10 @@ void LoggedTopics::add_system_identification_topics()
 	// for system id need to log imu and controls at full rate
 	add_topic("sensor_combined");
 	add_topic("vehicle_angular_velocity");
+	add_optional_topic("astsmc_allocator_status");
+	add_optional_topic("astsmc_safety_status");
+	add_optional_topic("astsmc_status");
+	add_optional_topic("control_allocator_status");
 	add_topic("vehicle_torque_setpoint");
 	add_topic("vehicle_acceleration");
 	add_topic("actuator_motors");

@@ -46,7 +46,12 @@
 #include <uORB/PublicationMulti.hpp>
 #include <uORB/Subscription.hpp>
 #include <uORB/SubscriptionCallback.hpp>
+#include "AstsmcAllocatorFeedback.hpp"
+
 #include <uORB/topics/actuator_controls_status.h>
+#include <uORB/topics/astsmc_allocator_status.h>
+#include <uORB/topics/astsmc_safety_status.h>
+#include <uORB/topics/astsmc_status.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/control_allocator_status.h>
 #include <uORB/topics/manual_control_setpoint.h>
@@ -57,6 +62,7 @@
 #include <uORB/topics/vehicle_land_detected.h>
 #include <uORB/topics/vehicle_rates_setpoint.h>
 #include <uORB/topics/vehicle_status.h>
+#include <uORB/topics/actuator_motors.h>
 #include <uORB/topics/vehicle_thrust_setpoint.h>
 #include <uORB/topics/vehicle_torque_setpoint.h>
 
@@ -100,8 +106,17 @@ private:
 	 * initialize some vectors/matrices from parameters
 	 */
 	void parameters_updated();
+	void resetAstsmcAllocatorFeedbackEpoch();
+	RateControl::AstsmcAllocatorFeedback updateAstsmcAllocatorFeedback(uint64_t current_sample,
+			bool eligible, bool new_status);
 
 	void updateActuatorControlsStatus(const vehicle_torque_setpoint_s &vehicle_torque_setpoint, float dt);
+
+	/**
+	 * Supply the Euler attitude error and net propeller speed that the paper
+	 * augmentation of the model-based SMC consumes for one cycle.
+	 */
+	void updateModelBasedSmcPaperState(uint64_t current_sample);
 
 	RateControl _rate_control; ///< class for rate control calculations
 	RateSetpointSource _rate_setpoint_source{RateSetpointSource::Unknown};
@@ -115,12 +130,18 @@ private:
 	uORB::Subscription _vehicle_land_detected_sub{ORB_ID(vehicle_land_detected)};
 	uORB::Subscription _vehicle_rates_setpoint_sub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Subscription _vehicle_status_sub{ORB_ID(vehicle_status)};
+	uORB::Subscription _actuator_motors_sub{ORB_ID(actuator_motors)};
+
+	actuator_motors_s _actuator_motors{};
 
 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
 
 	uORB::SubscriptionCallbackWorkItem _vehicle_angular_velocity_sub{this, ORB_ID(vehicle_angular_velocity)};
 
 	uORB::Publication<actuator_controls_status_s>	_actuator_controls_status_pub{ORB_ID(actuator_controls_status_0)};
+	uORB::Publication<astsmc_allocator_status_s>	_astsmc_allocator_status_pub{ORB_ID(astsmc_allocator_status)};
+	uORB::Publication<astsmc_safety_status_s>	_astsmc_safety_status_pub{ORB_ID(astsmc_safety_status)};
+	uORB::Publication<astsmc_status_s>		_astsmc_status_pub{ORB_ID(astsmc_status)};
 	uORB::PublicationMulti<rate_ctrl_status_s>	_controller_status_pub{ORB_ID(rate_ctrl_status)};
 	uORB::Publication<vehicle_rates_setpoint_s>	_vehicle_rates_setpoint_pub{ORB_ID(vehicle_rates_setpoint)};
 	uORB::Publication<vehicle_thrust_setpoint_s>	_vehicle_thrust_setpoint_pub;
@@ -131,7 +152,34 @@ private:
 
 	bool _landed{true};
 	bool _maybe_landed{true};
+	bool _ground_contact{true};
+	bool _has_low_throttle{true};
+	bool _astsmc_released_since_arming{false};
+	hrt_abstime _astsmc_no_ground_contact_since{0};
+	bool _is_vtol{false};
 	bool _smc_configuration_valid{false};
+	bool _astsmc_configuration_valid{false};
+	bool _control_allocator_feedback_valid{false};
+	bool _astsmc_allocator_epoch_active{false};
+	bool _astsmc_allocator_feedback_usable{false};
+	bool _astsmc_allocator_actuator_bound{false};
+	hrt_abstime _astsmc_first_command_sample{0};
+	hrt_abstime _astsmc_last_command_sample{0};
+	hrt_abstime _astsmc_last_accepted_allocator_sample{0};
+	float _astsmc_allocator_publication_age_s{NAN};
+	float _astsmc_allocator_sample_age_s{NAN};
+	uint16_t _astsmc_allocator_rejection_flags{0};
+	uint32_t _astsmc_allocator_accepted_count{0};
+	uint32_t _astsmc_allocator_rejected_count{0};
+	uint32_t _astsmc_headroom_request_count{0};
+	uint32_t _astsmc_roll_pitch_miss_count{0};
+	bool _astsmc_roll_pitch_miss_active{false};
+	hrt_abstime _astsmc_roll_pitch_miss_started{0};
+	bool _astsmc_roll_pitch_miss_reported{false};
+	uint32_t _astsmc_reported_fault_reason{0};
+	uint32_t _astsmc_reported_recovery_count[3] {};
+	uint32_t _astsmc_reported_selective_release_count[2] {};
+	control_allocator_status_s _control_allocator_status{};
 
 	hrt_abstime _last_run{0};
 
@@ -184,6 +232,7 @@ private:
 
 		(ParamInt<px4::params::MC_RATE_CTRL_T>) _param_mc_rate_ctrl_t,
 		(ParamInt<px4::params::MC_MSMC_CFG>) _param_mc_msmc_cfg,
+		(ParamInt<px4::params::MC_AST_CFG>) _param_mc_ast_cfg,
 
 		(ParamFloat<px4::params::MC_MPC_J_R>) _param_mc_mpc_j_roll,
 		(ParamFloat<px4::params::MC_MPC_J_P>) _param_mc_mpc_j_pitch,
@@ -222,6 +271,62 @@ private:
 		(ParamFloat<px4::params::MC_MPC_GYRO>) _param_mc_mpc_gyro,
 		(ParamFloat<px4::params::MC_MPC_TAU>) _param_mc_mpc_tau,
 
+		(ParamFloat<px4::params::MC_AST_J_R>) _param_mc_ast_j_roll,
+		(ParamFloat<px4::params::MC_AST_J_P>) _param_mc_ast_j_pitch,
+		(ParamFloat<px4::params::MC_AST_J_Y>) _param_mc_ast_j_yaw,
+		(ParamFloat<px4::params::MC_AST_EFF_R>) _param_mc_ast_eff_roll,
+		(ParamFloat<px4::params::MC_AST_EFF_P>) _param_mc_ast_eff_pitch,
+		(ParamFloat<px4::params::MC_AST_EFF_Y>) _param_mc_ast_eff_yaw,
+		(ParamFloat<px4::params::MC_AST_K1_R>) _param_mc_ast_k1_roll,
+		(ParamFloat<px4::params::MC_AST_K1_P>) _param_mc_ast_k1_pitch,
+		(ParamFloat<px4::params::MC_AST_K1_Y>) _param_mc_ast_k1_yaw,
+		(ParamFloat<px4::params::MC_AST_K2_R>) _param_mc_ast_k2_roll,
+		(ParamFloat<px4::params::MC_AST_K2_P>) _param_mc_ast_k2_pitch,
+		(ParamFloat<px4::params::MC_AST_K2_Y>) _param_mc_ast_k2_yaw,
+		(ParamFloat<px4::params::MC_AST_TMAX_R>) _param_mc_ast_tmax_roll,
+		(ParamFloat<px4::params::MC_AST_TMAX_P>) _param_mc_ast_tmax_pitch,
+		(ParamFloat<px4::params::MC_AST_TMAX_Y>) _param_mc_ast_tmax_yaw,
+		(ParamFloat<px4::params::MC_AST_RACC_R>) _param_mc_ast_racc_roll,
+		(ParamFloat<px4::params::MC_AST_RACC_P>) _param_mc_ast_racc_pitch,
+		(ParamFloat<px4::params::MC_AST_RACC_Y>) _param_mc_ast_racc_yaw,
+		(ParamFloat<px4::params::MC_AST_RJERK_R>) _param_mc_ast_rjerk_roll,
+		(ParamFloat<px4::params::MC_AST_RJERK_P>) _param_mc_ast_rjerk_pitch,
+		(ParamFloat<px4::params::MC_AST_RJERK_Y>) _param_mc_ast_rjerk_yaw,
+		(ParamFloat<px4::params::MC_AST_TRES_R>) _param_mc_ast_tres_roll,
+		(ParamFloat<px4::params::MC_AST_TRES_P>) _param_mc_ast_tres_pitch,
+		(ParamFloat<px4::params::MC_AST_TRES_Y>) _param_mc_ast_tres_yaw,
+		(ParamFloat<px4::params::MC_AST_RP_EXT>) _param_mc_ast_roll_pitch_extension,
+		(ParamFloat<px4::params::MC_AST_RP_K1_B>) _param_mc_ast_roll_pitch_k1_recovery_boost,
+		(ParamBool<px4::params::MC_AST_RP_AIR>) _param_mc_ast_roll_pitch_airmode,
+		(ParamFloat<px4::params::MC_AST_YAW_EXT>) _param_mc_ast_yaw_extension,
+		(ParamFloat<px4::params::MC_AST_TAU_R>) _param_mc_ast_tau_roll,
+		(ParamFloat<px4::params::MC_AST_TAU_P>) _param_mc_ast_tau_pitch,
+		(ParamFloat<px4::params::MC_AST_TAU_Y>) _param_mc_ast_tau_yaw,
+		(ParamFloat<px4::params::MC_AST_SLEW_R>) _param_mc_ast_slew_roll,
+		(ParamFloat<px4::params::MC_AST_SLEW_P>) _param_mc_ast_slew_pitch,
+		(ParamFloat<px4::params::MC_AST_SLEW_Y>) _param_mc_ast_slew_yaw,
+		(ParamFloat<px4::params::MC_AST_DU_R>) _param_mc_ast_du_roll,
+		(ParamFloat<px4::params::MC_AST_DU_P>) _param_mc_ast_du_pitch,
+		(ParamFloat<px4::params::MC_AST_DU_Y>) _param_mc_ast_du_yaw,
+		(ParamFloat<px4::params::MC_AST_SBD_R>) _param_mc_ast_sbd_roll,
+		(ParamFloat<px4::params::MC_AST_SBD_P>) _param_mc_ast_sbd_pitch,
+		(ParamFloat<px4::params::MC_AST_SBD_Y>) _param_mc_ast_sbd_yaw,
+		(ParamFloat<px4::params::MC_AST_TRK_B>) _param_mc_ast_tracking_blend,
+		(ParamFloat<px4::params::MC_AST_RFF>) _param_mc_ast_rff,
+		(ParamFloat<px4::params::MC_AST_RFF_RP>) _param_mc_ast_rff_rp,
+		(ParamFloat<px4::params::MC_AST_GYRO>) _param_mc_ast_gyro,
+		(ParamFloat<px4::params::MC_AST_DT_MIN>) _param_mc_ast_dt_min,
+		(ParamFloat<px4::params::MC_AST_DT_MAX>) _param_mc_ast_dt_max,
+		(ParamFloat<px4::params::MC_AST_REC_ERR>) _param_mc_ast_recovery_error,
+		(ParamFloat<px4::params::MC_AST_QK1_ERR>) _param_mc_ast_quiet_k1_error,
+		(ParamFloat<px4::params::MC_AST_REL_ERR>) _param_mc_ast_selective_release_error,
+		(ParamFloat<px4::params::MC_AST_REL_RATE>) _param_mc_ast_selective_release_rate,
+		(ParamFloat<px4::params::MC_AST_TRIM_CMD>) _param_mc_ast_trim_command,
+		(ParamFloat<px4::params::MC_AST_TRIM_ERR>) _param_mc_ast_trim_error,
+		(ParamFloat<px4::params::MC_AST_TRIM_ACC>) _param_mc_ast_trim_acceleration,
+		(ParamFloat<px4::params::MC_AST_TRIM_DWL>) _param_mc_ast_trim_confidence_time,
+		(ParamFloat<px4::params::MC_AST_TRIM_TC>) _param_mc_ast_trim_time_constant,
+
 		(ParamFloat<px4::params::MC_MSMC_J_R>) _param_mc_msmc_j_roll,
 		(ParamFloat<px4::params::MC_MSMC_J_P>) _param_mc_msmc_j_pitch,
 		(ParamFloat<px4::params::MC_MSMC_J_Y>) _param_mc_msmc_j_yaw,
@@ -251,6 +356,13 @@ private:
 		(ParamFloat<px4::params::MC_MSMC_TMAX_R>) _param_mc_msmc_tmax_roll,
 		(ParamFloat<px4::params::MC_MSMC_TMAX_P>) _param_mc_msmc_tmax_pitch,
 		(ParamFloat<px4::params::MC_MSMC_TMAX_Y>) _param_mc_msmc_tmax_yaw,
+
+		(ParamFloat<px4::params::MC_MSMC_A1_R>) _param_mc_msmc_a1_roll,
+		(ParamFloat<px4::params::MC_MSMC_A1_P>) _param_mc_msmc_a1_pitch,
+		(ParamFloat<px4::params::MC_MSMC_A1_Y>) _param_mc_msmc_a1_yaw,
+		(ParamFloat<px4::params::MC_MSMC_JR>) _param_mc_msmc_rotor_inertia,
+		(ParamFloat<px4::params::MC_MSMC_ROTOR_K>) _param_mc_msmc_rotor_speed_gain,
+		(ParamInt<px4::params::MC_MSMC_ROTOR_D>) _param_mc_msmc_rotor_directions,
 
 		(ParamFloat<px4::params::MC_SMC_LPF>) _param_mc_smc_lpf,
 		(ParamFloat<px4::params::MC_SMC_SLEW>) _param_mc_smc_slew,
