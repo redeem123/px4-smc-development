@@ -1,10 +1,18 @@
+uint8 ALLOCATION_POLICY_CONFIGURED = 0
+uint8 ALLOCATION_POLICY_ROLL_PITCH_HEADROOM = 1
+
 uint64 timestamp                        # time since system start (microseconds)
+uint64 timestamp_sample                 # timestamp of the torque setpoint used for this allocation result
+uint8 requested_allocation_policy       # sanitized per-command policy requested by the torque producer
+uint8 applied_allocation_policy         # policy actually applied by the allocation method
 
 bool torque_setpoint_achieved           # Boolean indicating whether the 3D torque setpoint was correctly allocated to actuators. 0 if not achieved, 1 if achieved.
+float32[3] allocated_torque             # Allocator-model torque produced by the actuator setpoint. This is not measured physical torque.
 float32[3] unallocated_torque           # Unallocated torque. Equal to 0 if the setpoint was achieved.
                                         # Computed as: unallocated_torque = torque_setpoint - allocated_torque
 
 bool thrust_setpoint_achieved           # Boolean indicating whether the 3D thrust setpoint was correctly allocated to actuators. 0 if not achieved, 1 if achieved.
+float32[3] allocated_thrust             # Allocator-model thrust produced by the actuator setpoint. This is not measured physical thrust.
 float32[3] unallocated_thrust           # Unallocated thrust. Equal to 0 if the setpoint was achieved.
                                         # Computed as: unallocated_thrust = thrust_setpoint - allocated_thrust
 

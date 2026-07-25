@@ -46,6 +46,9 @@ set(msg_files
 	AdcReport.msg
 	Airspeed.msg
 	AirspeedWind.msg
+	AstsmcAllocatorStatus.msg
+	AstsmcSafetyStatus.msg
+	AstsmcStatus.msg
 	AutotuneAttitudeControlStatus.msg
 	BatteryInfo.msg
 	ButtonEvent.msg
