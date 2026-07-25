@@ -64,6 +64,7 @@ private:
 	} _fw_takeoff_state;
 
 	void set_takeoff_position();
+	bool set_safety_takeoff_altitude(float &takeoff_altitude_amsl);
 	matrix::Vector2d _loiter_position_lat_lon{static_cast<double>(NAN), static_cast<double>(NAN)};
 	float _loiter_altitude_msl{NAN};
 };

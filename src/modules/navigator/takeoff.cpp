@@ -155,7 +155,8 @@ Takeoff::on_active()
 			// reset the position
 			set_takeoff_position();
 
-		} else if (is_mission_item_reached_or_completed() && !_navigator->get_mission_result()->finished) {
+		} else if (!_navigator->get_param_safty_takeoff()
+			   && is_mission_item_reached_or_completed() && !_navigator->get_mission_result()->finished) {
 			_navigator->get_mission_result()->finished = true;
 			_navigator->set_mission_result_updated();
 			_navigator->mode_completed(getNavigatorStateId());
@@ -179,6 +180,38 @@ Takeoff::on_active()
 	}
 }
 
+bool
+Takeoff::set_safety_takeoff_altitude(float &takeoff_altitude_amsl)
+{
+	static constexpr float target_hagl = 0.35f;
+	static constexpr float minimum_start_hagl = 0.10f;
+	static constexpr float maximum_start_hagl = 0.25f;
+	const vehicle_local_position_s *local_position = _navigator->get_local_position();
+
+	if (!local_position->dist_bottom_valid || !PX4_ISFINITE(local_position->dist_bottom)
+	    || !PX4_ISFINITE(local_position->z)
+	    || local_position->dist_bottom < minimum_start_hagl
+	    || local_position->dist_bottom > maximum_start_hagl) {
+		mavlink_log_critical(_navigator->get_mavlink_log_pub(),
+				     "Safety takeoff blocked: range must be 0.10-0.25 m\t");
+		return false;
+	}
+
+	const float reference_altitude = local_position->z_global && PX4_ISFINITE(local_position->ref_alt)
+					 ? local_position->ref_alt : 0.f;
+	const float climb = target_hagl - local_position->dist_bottom;
+	const float target_local_z = local_position->z - climb;
+	takeoff_altitude_amsl = reference_altitude - target_local_z;
+	const bool target_valid = PX4_ISFINITE(takeoff_altitude_amsl);
+
+	if (target_valid) {
+		mavlink_log_info(_navigator->get_mavlink_log_pub(),
+				 "Safety takeoff: %.2f m HAGL, %.2f m climb\t", (double)target_hagl, (double)climb);
+	}
+
+	return target_valid;
+}
+
 void
 Takeoff::set_takeoff_position()
 {
@@ -197,6 +230,13 @@ Takeoff::set_takeoff_position()
 		events::send<float>(events::ID("navigator_takeoff_default_alt"), {events::Log::Info, events::LogInternal::Info},
 				    "Using default takeoff altitude: {1:.2m}",
 				    _navigator->get_param_mis_takeoff_alt());
+	}
+
+	if (_navigator->get_param_safty_takeoff()
+	    && _navigator->get_vstatus()->vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING
+	    && !set_safety_takeoff_altitude(takeoff_altitude_amsl)) {
+		// A target at the current altitude cannot trigger the takeoff ramp.
+		takeoff_altitude_amsl = _navigator->get_global_position()->alt;
 	}
 
 	if (takeoff_altitude_amsl < _navigator->get_global_position()->alt) {

@@ -157,12 +157,10 @@ public:
 	 */
 	bool update(const float dt);
 
-	/**
-	 * Set the integral term in xy to 0.
-	 * @see _vel_int
-	 */
+	/** Reset velocity-controller integral terms. */
 	void resetIntegral() { _vel_int.setZero(); }
 	void resetIntegralXY() { _vel_int.xy() = matrix::Vector2f(); }
+	void resetIntegralZ() { _vel_int(2) = 0.f; }
 
 	/**
 	 * If set, the tilt setpoint is computed by assuming no vertical acceleration

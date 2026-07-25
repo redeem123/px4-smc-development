@@ -110,10 +110,11 @@ protected:
 	void rcHelpModifyYaw(float &yaw_sp);
 
 	/** determines when to trigger a takeoff (ignored in flight) */
-	bool _checkTakeoff() override { return _want_takeoff; };
+	bool _checkTakeoff() override;
 
 	void _prepareLandSetpoints();
 	bool _highEnoughForLandingGear(); /**< Checks if gears can be lowered. */
+	void _updateSafetyTakeoffSetpoint();
 
 	void updateParams() override; /**< See ModuleParam class */
 
@@ -143,6 +144,8 @@ protected:
 	matrix::Vector3f _land_position;
 	float _land_heading;
 	WaypointType _type_previous{WaypointType::idle}; /**< Previous type of current target triplet. */
+	float _safety_takeoff_origin_z{NAN};
+	float _safety_takeoff_target_z{NAN};
 	bool _is_emergency_braking_active{false};
 	bool _want_takeoff{false};
 
@@ -173,7 +176,8 @@ protected:
 					(ParamFloat<px4::params::MPC_Z_V_AUTO_UP>) _param_mpc_z_v_auto_up,
 					(ParamFloat<px4::params::MPC_Z_V_AUTO_DN>) _param_mpc_z_v_auto_dn,
 					(ParamFloat<px4::params::MPC_TKO_SPEED>) _param_mpc_tko_speed,
-					(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _param_mpc_tko_ramp_t
+					(ParamFloat<px4::params::MPC_TKO_RAMP_T>) _param_mpc_tko_ramp_t,
+					(ParamBool<px4::params::SAFTY_TAKEOFF>) _param_safty_takeoff
 				       );
 
 private:

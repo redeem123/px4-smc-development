@@ -28,6 +28,20 @@ parameters:
       max: 100.0
       decimal: 1
       increment: 0.5
+    SAFTY_TAKEOFF:
+      description:
+        short: Enable range-limited safety takeoff
+        long: |-
+          Enables an experimental multicopter takeoff for restrained controller
+          testing. A valid fused distance-to-ground estimate between 0.10 m and
+          0.25 m is required when Takeoff mode is activated. The target is fixed
+          at 0.35 m above ground using closed-loop range feedback, with a maximum
+          0.25 m/s ascent speed and bounded local-altitude correction. Takeoff is
+          held until another flight mode is selected, avoiding a transition to
+          global Hold on optical-flow-only vehicles. Set to 0 for standard PX4
+          takeoff behavior.
+      type: boolean
+      default: 0
     MIS_TKO_LAND_REQ:
       description:
         short: Mission takeoff/landing required

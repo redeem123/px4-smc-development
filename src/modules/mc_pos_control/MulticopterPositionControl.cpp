@@ -416,6 +416,7 @@ void MulticopterPositionControl::Run()
 		}
 
 		_vehicle_land_detected_sub.update(&_vehicle_land_detected);
+		_vehicle_status_sub.update(&_vehicle_status);
 
 		if (_hover_thrust_estimate_sub.updated()) {
 			hover_thrust_estimate_s hte;
@@ -570,6 +571,14 @@ void MulticopterPositionControl::Run()
 			}
 
 			_control.setState(states);
+
+			if (_param_safty_takeoff.get()
+			    && _vehicle_status.nav_state == vehicle_status_s::NAVIGATION_STATE_AUTO_TAKEOFF
+			    && _takeoff.getTakeoffState() == TakeoffState::rampup) {
+				// The ramp velocity starts downward to generate zero thrust. Do not let that
+				// intentional error bias the vertical integrator before liftoff.
+				_control.resetIntegralZ();
+			}
 
 			const hrt_abstime now = hrt_absolute_time();
 

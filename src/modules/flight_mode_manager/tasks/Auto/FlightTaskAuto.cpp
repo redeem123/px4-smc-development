@@ -82,8 +82,15 @@ void FlightTaskAuto::reActivate()
 {
 	FlightTask::reActivate();
 
-	// On ground, reset acceleration and velocity to zero
-	_position_smoothing.reset({0.f, 0.f, 0.f}, {0.f, 0.f, 0.7f}, _position);
+	if (_param_safty_takeoff.get() && _type == WaypointType::takeoff) {
+		_position_smoothing.reset({0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}, _position);
+		_safety_takeoff_origin_z = _position(2);
+		_safety_takeoff_target_z = _position(2);
+
+	} else {
+		// On ground, reset acceleration and initialize with a downward velocity.
+		_position_smoothing.reset({0.f, 0.f, 0.f}, {0.f, 0.f, 0.7f}, _position);
+	}
 }
 
 bool FlightTaskAuto::updateInitialize()
@@ -110,6 +117,21 @@ bool FlightTaskAuto::update()
 	bool ret = FlightTask::update();
 	// always reset constraints because they might change depending on the type
 	_setDefaultConstraints();
+	const bool safety_takeoff = _param_safty_takeoff.get() && _type == WaypointType::takeoff;
+
+	if (safety_takeoff
+	    && (_type_previous != WaypointType::takeoff || !PX4_ISFINITE(_safety_takeoff_origin_z))) {
+		// Do not inherit the downward reactivation velocity used by normal Auto tasks.
+		_position_smoothing.reset({0.f, 0.f, 0.f}, {0.f, 0.f, 0.f}, _position);
+		_safety_takeoff_origin_z = _position(2);
+		_safety_takeoff_target_z = _position(2);
+
+	} else if (!safety_takeoff) {
+		_safety_takeoff_origin_z = NAN;
+		_safety_takeoff_target_z = NAN;
+	}
+
+	_updateSafetyTakeoffSetpoint();
 
 	// The only time a thrust set-point is sent out is during
 	// idle. Hence, reset thrust set-point to NAN in case the
@@ -205,6 +227,44 @@ bool FlightTaskAuto::update()
 	_constraints.want_takeoff = _checkTakeoff();
 
 	return ret;
+}
+
+void FlightTaskAuto::_updateSafetyTakeoffSetpoint()
+{
+	if (!_param_safty_takeoff.get() || _type != WaypointType::takeoff
+	    || !PX4_ISFINITE(_safety_takeoff_origin_z)) {
+		return;
+	}
+
+	static constexpr float target_hagl = 0.35f;
+	static constexpr float minimum_valid_hagl = 0.08f;
+	static constexpr float maximum_valid_hagl = 0.60f;
+	static constexpr float maximum_local_correction = 0.45f;
+
+	if (PX4_ISFINITE(_dist_to_bottom)
+	    && _dist_to_bottom >= minimum_valid_hagl && _dist_to_bottom <= maximum_valid_hagl) {
+		const float range_relative_target_z = _position(2) - (target_hagl - _dist_to_bottom);
+		_safety_takeoff_target_z = math::constrain(range_relative_target_z,
+					   _safety_takeoff_origin_z - maximum_local_correction,
+					   _safety_takeoff_origin_z);
+	}
+
+	_triplet_previous(2) = _safety_takeoff_target_z;
+	_triplet_current(2) = _safety_takeoff_target_z;
+	_triplet_next(2) = _safety_takeoff_target_z;
+}
+
+bool FlightTaskAuto::_checkTakeoff()
+{
+	if (_param_safty_takeoff.get() && _type == WaypointType::takeoff) {
+		const bool range_valid = PX4_ISFINITE(_dist_to_bottom)
+					 && _dist_to_bottom >= 0.10f && _dist_to_bottom <= 0.40f;
+		const bool target_above = PX4_ISFINITE(_triplet_current(2)) && PX4_ISFINITE(_position(2))
+					  && _triplet_current(2) < _position(2) - 0.05f;
+		return range_valid && target_above;
+	}
+
+	return _want_takeoff;
 }
 
 void FlightTaskAuto::overrideCruiseSpeed(const float cruise_speed_m_s)
@@ -758,10 +818,21 @@ void FlightTaskAuto::_updateTrajConstraints()
 		_position_smoothing.setMaxVelocityZ(_param_mpc_z_v_auto_dn.get());
 	}
 
+	if (_param_safty_takeoff.get() && _type == WaypointType::takeoff) {
+		static constexpr float safety_takeoff_speed = 0.25f;
+		const float ramp_time = math::max(_param_mpc_tko_ramp_t.get(), 0.1f);
+		_position_smoothing.setMaxVelocityZ(safety_takeoff_speed);
+		_position_smoothing.setMaxAccelerationZ(math::min(_param_mpc_acc_up_max.get(), safety_takeoff_speed / ramp_time));
+	}
+
 	// Stretch the constraints of the velocity controller to leave some room for an additional
 	// correction required by the altitude/vertical position controller
 	_constraints.speed_down = math::max(_constraints.speed_down, 1.2f * _param_mpc_z_v_auto_dn.get());;
 	_constraints.speed_up = math::max(_constraints.speed_up, 1.2f * _param_mpc_z_v_auto_up.get());;
+
+	if (_param_safty_takeoff.get() && _type == WaypointType::takeoff) {
+		_constraints.speed_up = math::min(_constraints.speed_up, 0.25f);
+	}
 }
 
 bool FlightTaskAuto::_highEnoughForLandingGear()
