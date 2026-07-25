@@ -48,6 +48,7 @@ px4_add_module(
 		baro_calibration.cpp
 		calibration_routines.cpp
 		Commander.cpp
+		AstsmcRuntimeFaultLatch.hpp
 		commander_helper.cpp
 		esc_calibration.cpp
 		factory_calibration_storage.cpp
@@ -79,5 +80,6 @@ px4_add_module(
         atmosphere
 	)
 
+px4_add_unit_gtest(SRC AstsmcRuntimeFaultLatchTest.cpp)
 px4_add_unit_gtest(SRC mag_calibration_test.cpp LINKLIBS modules__commander)
 px4_add_functional_gtest(SRC ModeManagementTest.cpp LINKLIBS modules__commander)

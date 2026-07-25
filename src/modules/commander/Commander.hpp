@@ -34,6 +34,7 @@
 #pragma once
 
 /*   Helper classes  */
+#include "AstsmcRuntimeFaultLatch.hpp"
 #include "failsafe/failsafe.h"
 #include "failure_detector/FailureDetector.hpp"
 #include "HealthAndArmingChecks/HealthAndArmingChecks.hpp"
@@ -63,6 +64,7 @@
 #include <uORB/SubscriptionInterval.hpp>
 #include <uORB/SubscriptionMultiArray.hpp>
 #include <uORB/topics/action_request.h>
+#include <uORB/topics/astsmc_safety_status.h>
 #include <uORB/topics/airspeed.h>
 #include <uORB/topics/battery_status.h>
 #include <uORB/topics/cpuload.h>
@@ -284,6 +286,7 @@ private:
 	float _last_manual_throttle{-1.f};
 
 	bool _arm_tune_played{false};
+	AstsmcRuntimeFaultLatch _astsmc_runtime_fault_latch;
 	bool _have_taken_off_since_arming{false};
 	bool _status_changed{true};
 	bool _mission_in_progress{false};
@@ -297,6 +300,7 @@ private:
 
 	// Subscriptions
 	uORB::Subscription					_action_request_sub{ORB_ID(action_request)};
+	uORB::Subscription					_astsmc_safety_status_sub{ORB_ID(astsmc_safety_status)};
 	uORB::Subscription					_cpuload_sub{ORB_ID(cpuload)};
 	uORB::Subscription					_iridiumsbd_status_sub{ORB_ID(iridiumsbd_status)};
 	uORB::Subscription					_manual_control_setpoint_sub{ORB_ID(manual_control_setpoint)};

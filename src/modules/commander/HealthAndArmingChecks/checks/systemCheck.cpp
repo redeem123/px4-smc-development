@@ -41,6 +41,23 @@
 void SystemChecks::checkAndReport(const Context &context, Report &reporter)
 {
 	actuator_armed_s actuator_armed;
+	astsmc_safety_status_s astsmc_safety_status{};
+
+	if (_astsmc_safety_status_sub.copy(&astsmc_safety_status) && astsmc_safety_status.runtime_fault_latched) {
+		_astsmc_runtime_fault_latched = true;
+		_astsmc_runtime_fault_reason |= astsmc_safety_status.runtime_fault_reason;
+	}
+
+	if (_astsmc_runtime_fault_latched) {
+		/* EVENT
+		 * @description
+		 * A Mode-3 runtime intervention or invariant failure occurred earlier in this boot session.
+		 * Review the log and reboot before another test.
+		 */
+		reporter.armingCheckFailure<uint32_t>(NavModes::All, health_component_t::rate_controller,
+				events::ID("check_system_ast_runtime_fault"), events::Log::Error,
+				"ASTSMC runtime fault {1}, reboot required", _astsmc_runtime_fault_reason);
+	}
 
 	if (!context.isArmed() && _param_mc_rate_ctrl_t.get() == 2) {
 		if (_param_mc_msmc_cfg.get() != 1) {
@@ -79,6 +96,78 @@ void SystemChecks::checkAndReport(const Context &context, Report &reporter)
 
 				if (reporter.mavlink_log_pub()) {
 					mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: SMC controller not ready");
+				}
+			}
+		}
+	}
+
+	if (!context.isArmed()
+	    && (context.status().vehicle_type == vehicle_status_s::VEHICLE_TYPE_ROTARY_WING || context.status().is_vtol)
+	    && _param_mc_rate_ctrl_t.get() == 3) {
+		if (_param_mc_ast_cfg.get() != 1) {
+			/* EVENT
+			 * @description
+			 * Review the physical scaling, fixed super-twisting gains, torque limits, and timing bounds.
+			 * Then set <param>MC_AST_CFG</param> to 1 as the last model-card step.
+			 */
+			reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+						    events::ID("check_system_ast_config"), events::Log::Error,
+						    "ASTSMC model card not acknowledged");
+
+			if (reporter.mavlink_log_pub()) {
+				mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: ASTSMC card not acknowledged");
+			}
+
+		} else if (context.status().is_vtol) {
+			/* EVENT
+			 * @description
+			 * VTOL attitude control scales and blends the multicopter torque command after the type-3 controller.
+			 * Use this research controller on a pure multicopter airframe.
+			 */
+			reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+						    events::ID("check_system_ast_vtol"), events::Log::Error,
+						    "ASTSMC does not support VTOL");
+
+			if (reporter.mavlink_log_pub()) {
+				mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: ASTSMC does not support VTOL");
+			}
+
+		} else if (_param_mc_bat_scale_en.get()) {
+			/* EVENT
+			 * @description
+			 * Type-3 internal conditioning requires the limited controller command to be sent unchanged to allocation.
+			 * Disable <param>MC_BAT_SCALE_EN</param> for this research controller.
+			 */
+			reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+						    events::ID("check_system_ast_bat_scale"), events::Log::Error,
+						    "Disable battery scaling for ASTSMC");
+
+			if (reporter.mavlink_log_pub()) {
+				mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: Disable battery scaling for ASTSMC");
+			}
+
+		} else {
+			rate_ctrl_status_s controller_status{};
+			parameter_update_s parameter_update{};
+			const bool status_available = _rate_ctrl_status_sub.copy(&controller_status);
+			const bool update_available = _parameter_update_sub.copy(&parameter_update);
+			const bool status_stale = !status_available || hrt_elapsed_time(&controller_status.timestamp) > 2_s;
+			const bool update_pending = update_available && controller_status.timestamp < parameter_update.timestamp;
+			const bool controller_ready = !status_stale && !update_pending
+						      && controller_status.controller_type == 3 && controller_status.astsmc_valid;
+
+			if (!controller_ready) {
+				/* EVENT
+				 * @description
+				 * The rate controller rejected the ASTSMC card, has not applied the latest parameter update,
+				 * or is not publishing a current valid type-3 status.
+				 */
+				reporter.armingCheckFailure(NavModes::All, health_component_t::system,
+							    events::ID("check_system_ast_not_ready"), events::Log::Error,
+							    "ASTSMC controller not ready");
+
+				if (reporter.mavlink_log_pub()) {
+					mavlink_log_critical(reporter.mavlink_log_pub(), "Preflight Fail: ASTSMC controller not ready");
 				}
 			}
 		}

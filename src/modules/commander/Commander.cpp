@@ -667,6 +667,22 @@ transition_result_t Commander::arm(arm_disarm_reason_t calling_reason, bool run_
 		return TRANSITION_NOT_CHANGED;
 	}
 
+	astsmc_safety_status_s astsmc_safety_status{};
+
+	if (_astsmc_safety_status_sub.copy(&astsmc_safety_status)) {
+		_astsmc_runtime_fault_latch.observe(astsmc_safety_status.runtime_fault_latched,
+						    astsmc_safety_status.runtime_fault_reason);
+	}
+
+	if (_astsmc_runtime_fault_latch.blocksArming(run_preflight_checks)) {
+		mavlink_log_critical(&_mavlink_log_pub, "Arming denied: ASTSMC runtime fault requires reboot\t");
+		events::send<uint32_t>(events::ID("commander_arm_denied_astsmc_runtime_fault"),
+			{events::Log::Critical, events::LogInternal::Info},
+			"Arming denied: ASTSMC runtime fault {1}, reboot required", _astsmc_runtime_fault_latch.reason());
+		tune_negative(true);
+		return TRANSITION_DENIED;
+	}
+
 	if (_vehicle_status.calibration_enabled
 	    || _vehicle_status.rc_calibration_in_progress
 	    || _actuator_armed.in_esc_calibration_mode) {

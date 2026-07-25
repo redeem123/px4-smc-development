@@ -1,6 +1,6 @@
 /****************************************************************************
  *
- *   Copyright (c) 2022 PX4 Development Team. All rights reserved.
+ *   Copyright (c) 2026 PX4 Development Team. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -31,40 +31,41 @@
  *
  ****************************************************************************/
 
-#pragma once
+#include "AstsmcRuntimeFaultLatch.hpp"
 
-#include "../Common.hpp"
+#include <gtest/gtest.h>
 
-#include <uORB/Subscription.hpp>
-#include <uORB/topics/actuator_armed.h>
-#include <uORB/topics/astsmc_safety_status.h>
-#include <uORB/topics/parameter_update.h>
-#include <uORB/topics/rate_ctrl_status.h>
-
-class SystemChecks : public HealthAndArmingCheckBase
+TEST(AstsmcRuntimeFaultLatchTest, StartsClear)
 {
-public:
-	SystemChecks() = default;
-	~SystemChecks() = default;
+	AstsmcRuntimeFaultLatch latch;
+	EXPECT_FALSE(latch.latched());
+	EXPECT_EQ(latch.reason(), 0u);
+}
 
-	void checkAndReport(const Context &context, Report &reporter) override;
+TEST(AstsmcRuntimeFaultLatchTest, SourceRecoveryDoesNotClearBootSessionLatch)
+{
+	AstsmcRuntimeFaultLatch latch;
+	latch.observe(true, 1u);
+	latch.observe(false, 0u);
+	EXPECT_TRUE(latch.latched());
+	EXPECT_EQ(latch.reason(), 1u);
+}
 
-private:
-	uORB::Subscription _actuator_armed_sub{ORB_ID(actuator_armed)};
-	uORB::Subscription _astsmc_safety_status_sub{ORB_ID(astsmc_safety_status)};
-	uORB::Subscription _parameter_update_sub{ORB_ID(parameter_update)};
-	uORB::Subscription _rate_ctrl_status_sub{ORB_ID(rate_ctrl_status)};
-	bool _astsmc_runtime_fault_latched{false};
-	uint32_t _astsmc_runtime_fault_reason{0};
+TEST(AstsmcRuntimeFaultLatchTest, BlocksArmingWithAndWithoutPreflightChecks)
+{
+	AstsmcRuntimeFaultLatch latch;
+	EXPECT_FALSE(latch.blocksArming(true));
+	EXPECT_FALSE(latch.blocksArming(false));
+	latch.observe(true, 1u);
+	EXPECT_TRUE(latch.blocksArming(true));
+	EXPECT_TRUE(latch.blocksArming(false));
+}
 
-	DEFINE_PARAMETERS_CUSTOM_PARENT(HealthAndArmingCheckBase,
-					(ParamInt<px4::params::CBRK_VTOLARMING>) _param_cbrk_vtolarming,
-					(ParamInt<px4::params::CBRK_USB_CHK>) _param_cbrk_usb_chk,
-					(ParamBool<px4::params::COM_ARM_WO_GPS>) _param_com_arm_wo_gps,
-					(ParamInt<px4::params::COM_ARM_AUTH_REQ>) _param_com_arm_auth_req,
-					(ParamInt<px4::params::MC_RATE_CTRL_T>) _param_mc_rate_ctrl_t,
-					(ParamInt<px4::params::MC_MSMC_CFG>) _param_mc_msmc_cfg,
-					(ParamInt<px4::params::MC_AST_CFG>) _param_mc_ast_cfg,
-					(ParamBool<px4::params::MC_BAT_SCALE_EN>) _param_mc_bat_scale_en
-				       )
-};
+TEST(AstsmcRuntimeFaultLatchTest, AccumulatesLaterReasons)
+{
+	AstsmcRuntimeFaultLatch latch;
+	latch.observe(true, 1u);
+	latch.observe(true, 4u);
+	EXPECT_TRUE(latch.latched());
+	EXPECT_EQ(latch.reason(), 5u);
+}
