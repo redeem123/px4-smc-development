@@ -39,6 +39,13 @@ class RateModelIdentificationTest(unittest.TestCase):
         self.assertAlmostEqual(estimate["damping"], 0.02, places=5)
         self.assertGreater(estimate["r_squared"], 0.9999)
 
+    def test_effectiveness_recommendation_includes_all_research_controllers(self):
+        recommendation = IDENTIFICATION.effectiveness_recommendation("yaw", 0.8)
+
+        self.assertIn("MC_MPC_EFF_Y=0.800000", recommendation)
+        self.assertIn("MC_MSMC_EFF_Y=0.800000", recommendation)
+        self.assertIn("MC_AST_EFF_Y=0.800000", recommendation)
+
     def test_fit_axis_rejects_negative_effectiveness(self):
         timestamps = np.arange(0.0, 5.0, 0.01)
         command = np.sin(timestamps)

@@ -97,6 +97,15 @@ def fit_axis(timestamps, command, rate, physical_torque, tau_candidates):
     }
 
 
+def effectiveness_recommendation(axis, effectiveness):
+    suffix = "RPY"[AXES.index(axis)]
+    return (
+        f"recommended-{axis}: MC_MPC_EFF_{suffix}={effectiveness:.6f} "
+        f"MC_MSMC_EFF_{suffix}={effectiveness:.6f} "
+        f"MC_AST_EFF_{suffix}={effectiveness:.6f}"
+    )
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("log", type=Path)
@@ -326,11 +335,7 @@ def main():
         )
 
         if axis_identified:
-            suffix = "RPY"[axis_index]
-            print(
-                f"recommended-{axis}: MC_MPC_EFF_{suffix}={estimate['effectiveness']:.6f} "
-                f"MC_MSMC_EFF_{suffix}={estimate['effectiveness']:.6f}"
-            )
+            print(effectiveness_recommendation(axis, estimate["effectiveness"]))
 
     requested_identified = [identified[AXES.index(axis)] for axis in selected_axes]
 
