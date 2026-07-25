@@ -143,7 +143,7 @@ parameters:
                             type: string
                             allowed: [
                                 '%', 'Hz', '1/s', 'mAh',
-                                'rad', '%/rad', 'rad/s', 'rad/s^2', '%/rad/s',  'rad s^2/m','rad s/m',
+                                'rad', '%/rad', 'rad/s', 'rad/s^2', 'rad/s^3', '%/rad/s',  'rad s^2/m','rad s/m',
                                 'bit/s', 'B/s', 'MiB',
                                 'deg', 'deg*1e7', 'deg/s', 'deg/s^2',
                                 'celcius', 'gauss', 'gauss/s', 'mgauss', 'mgauss^2',
