@@ -105,7 +105,8 @@ public:
 		_control_allocation.updateParameters();
 	}
 
-	Vector4f allocate(float roll, float pitch, float yaw, float thrust)
+	Vector4f allocate(float roll, float pitch, float yaw, float thrust,
+			  ControlAllocation::AllocationPolicy allocation_policy = ControlAllocation::AllocationPolicy::CONFIGURED)
 	{
 		Vector<float, ControlAllocation::NUM_AXES> control_setpoint{};
 		control_setpoint(ControlAllocation::ControlAxis::ROLL) = roll;
@@ -113,6 +114,7 @@ public:
 		control_setpoint(ControlAllocation::ControlAxis::YAW) = yaw;
 		control_setpoint(ControlAllocation::ControlAxis::THRUST_Z) = thrust;
 		_control_allocation.setControlSetpoint(control_setpoint);
+		_control_allocation.setAllocationPolicy(allocation_policy);
 		_control_allocation.allocate();
 		return getQuadOutputs();
 	}
@@ -333,6 +335,36 @@ TEST_F(ControlAllocationSequentialDesaturationTestQuadX, PreviousMixingTestsNoAi
 	EXPECT_EQ(allocate(-1.000f, 0.900f, 0.000f, -0.450f), Vector4f(0.900000f, 0.450000f, 0.000000f, 0.450000f)); // 63
 	EXPECT_EQ(allocate(-1.000f, 0.900f, 0.000f, -0.900f), Vector4f(1.000000f, 0.550000f, 0.050000f, 0.500000f)); // 64
 	EXPECT_EQ(allocate(-1.000f, 0.900f, 0.000f, -1.000f), Vector4f(1.000000f, 0.550000f, 0.050000f, 0.500000f)); // 65
+}
+
+TEST_F(ControlAllocationSequentialDesaturationTestQuadX, TransientRollPitchHeadroomPolicy)
+{
+	constexpr ControlAllocation::AllocationPolicy headroom_policy =
+		ControlAllocation::AllocationPolicy::ROLL_PITCH_HEADROOM;
+	const Vector4f configured_output = allocate(-1.f, .9f, -.9f, -.1f);
+	const Vector4f transient_output = allocate(-1.f, .9f, -.9f, -.1f, headroom_policy);
+	EXPECT_EQ(_control_allocation.getAppliedAllocationPolicy(), headroom_policy);
+
+	setAirmode(1);
+	const Vector4f airmode_rp_output = allocate(-1.f, .9f, -.9f, -.1f);
+	EXPECT_EQ(transient_output, airmode_rp_output);
+	EXPECT_NE(transient_output, configured_output);
+
+	setAirmode(0);
+	EXPECT_EQ(allocate(-1.f, .9f, -.9f, -.1f), configured_output);
+	EXPECT_EQ(_control_allocation.getAppliedAllocationPolicy(), ControlAllocation::AllocationPolicy::CONFIGURED);
+}
+
+TEST_F(ControlAllocationSequentialDesaturationTestQuadX, TransientRollPitchHeadroomDoesNotEnableYawAirmode)
+{
+	constexpr ControlAllocation::AllocationPolicy headroom_policy =
+		ControlAllocation::AllocationPolicy::ROLL_PITCH_HEADROOM;
+	const Vector4f transient_output = allocate(-1.f, .9f, -.9f, 0.f, headroom_policy);
+
+	setAirmode(1);
+	EXPECT_EQ(transient_output, allocate(-1.f, .9f, -.9f, 0.f));
+	setAirmode(2);
+	EXPECT_NE(transient_output, allocate(-1.f, .9f, -.9f, 0.f));
 }
 
 TEST_F(ControlAllocationSequentialDesaturationTestQuadX, PreviousMixingTestsAirmodeRP)

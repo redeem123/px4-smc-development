@@ -381,6 +381,10 @@ ControlAllocator::Run()
 	// Run allocator on torque changes
 	if (_vehicle_torque_setpoint_sub.update(&vehicle_torque_setpoint)) {
 		_torque_sp = matrix::Vector3f(vehicle_torque_setpoint.xyz);
+		_requested_allocation_policy = vehicle_torque_setpoint.allocation_policy
+					       == vehicle_torque_setpoint_s::ALLOCATION_POLICY_ROLL_PITCH_HEADROOM ?
+					       vehicle_torque_setpoint_s::ALLOCATION_POLICY_ROLL_PITCH_HEADROOM :
+					       vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED;
 
 		do_update = true;
 		_timestamp_sample = vehicle_torque_setpoint.timestamp_sample;
@@ -423,12 +427,27 @@ ControlAllocator::Run()
 
 		_actuator_group_preflight_check.applyOverrides(c, _is_vtol, *_actuator_effectiveness);
 
+		_applied_allocation_policy = vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED;
+		const bool roll_pitch_headroom_allowed = _requested_allocation_policy
+				== vehicle_torque_setpoint_s::ALLOCATION_POLICY_ROLL_PITCH_HEADROOM
+				&& !_actuator_group_preflight_check.isActive()
+				&& _handled_motor_failure_bitmask == 0
+				&& _motor_stop_mask == 0;
+
 		for (int i = 0; i < _num_control_allocation; ++i) {
 
 			_control_allocation[i]->setControlSetpoint(c[i]);
+			_control_allocation[i]->setAllocationPolicy(i == 0 && roll_pitch_headroom_allowed ?
+					ControlAllocation::AllocationPolicy::ROLL_PITCH_HEADROOM :
+					ControlAllocation::AllocationPolicy::CONFIGURED);
 
 			// Do allocation
 			_control_allocation[i]->allocate();
+
+			if (i == 0 && _control_allocation[i]->getAppliedAllocationPolicy()
+			    == ControlAllocation::AllocationPolicy::ROLL_PITCH_HEADROOM) {
+				_applied_allocation_policy = vehicle_torque_setpoint_s::ALLOCATION_POLICY_ROLL_PITCH_HEADROOM;
+			}
 			_actuator_effectiveness->allocateAuxilaryControls(dt, i, _control_allocation[i]->_actuator_sp); //flaps and spoilers
 			_actuator_effectiveness->updateSetpoint(c[i], i, _control_allocation[i]->_actuator_sp,
 								_control_allocation[i]->getActuatorMin(), _control_allocation[i]->getActuatorMax());
@@ -629,12 +648,23 @@ ControlAllocator::publish_control_allocator_status(int matrix_index)
 {
 	control_allocator_status_s control_allocator_status{};
 	control_allocator_status.timestamp = hrt_absolute_time();
+	control_allocator_status.timestamp_sample = _timestamp_sample;
+	control_allocator_status.requested_allocation_policy = matrix_index == 0 ? _requested_allocation_policy :
+			vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED;
+	control_allocator_status.applied_allocation_policy = matrix_index == 0 ? _applied_allocation_policy :
+			vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED;
 	control_allocator_status.actuator_group_preflight_check_active = _actuator_group_preflight_check.isActive();
 
 	// TODO: disabled motors (?)
 
 	// Allocated control
 	const matrix::Vector<float, NUM_AXES> &allocated_control = _control_allocation[matrix_index]->getAllocatedControl();
+	control_allocator_status.allocated_torque[0] = allocated_control(0);
+	control_allocator_status.allocated_torque[1] = allocated_control(1);
+	control_allocator_status.allocated_torque[2] = allocated_control(2);
+	control_allocator_status.allocated_thrust[0] = allocated_control(3);
+	control_allocator_status.allocated_thrust[1] = allocated_control(4);
+	control_allocator_status.allocated_thrust[2] = allocated_control(5);
 
 	// Unallocated control
 	const matrix::Vector<float, NUM_AXES> unallocated_control = _control_allocation[matrix_index]->getControlSetpoint() -

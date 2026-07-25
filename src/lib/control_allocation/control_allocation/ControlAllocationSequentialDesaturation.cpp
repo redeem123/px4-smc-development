@@ -49,18 +49,28 @@ ControlAllocationSequentialDesaturation::allocate()
 
 	_prev_actuator_sp = _actuator_sp;
 
-	switch (_param_mc_airmode.get()) {
-	case 1:
+	const AllocationPolicy allocation_policy = _allocation_policy;
+	_allocation_policy = AllocationPolicy::CONFIGURED;
+	_applied_allocation_policy = AllocationPolicy::CONFIGURED;
+
+	if (allocation_policy == AllocationPolicy::ROLL_PITCH_HEADROOM) {
 		mixAirmodeRP();
-		break;
+		_applied_allocation_policy = AllocationPolicy::ROLL_PITCH_HEADROOM;
 
-	case 2:
-		mixAirmodeRPY();
-		break;
+	} else {
+		switch (_param_mc_airmode.get()) {
+		case 1:
+			mixAirmodeRP();
+			break;
 
-	default:
-		mixAirmodeDisabled();
-		break;
+		case 2:
+			mixAirmodeRPY();
+			break;
+
+		default:
+			mixAirmodeDisabled();
+			break;
+		}
 	}
 }
 

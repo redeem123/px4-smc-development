@@ -56,6 +56,9 @@ public:
 
 	void allocate() override;
 
+	void setAllocationPolicy(AllocationPolicy policy) override { _allocation_policy = policy; }
+	AllocationPolicy getAppliedAllocationPolicy() const override { return _applied_allocation_policy; }
+
 	void updateParameters() override;
 
 	// This is the minimum actuator yaw granted when the controller is saturated.
@@ -125,6 +128,9 @@ private:
 	 * but yaw is decreased as much as required.
 	 */
 	void mixYaw();
+
+	AllocationPolicy _allocation_policy{AllocationPolicy::CONFIGURED};
+	AllocationPolicy _applied_allocation_policy{AllocationPolicy::CONFIGURED};
 
 	DEFINE_PARAMETERS(
 		(ParamInt<px4::params::MC_AIRMODE>) _param_mc_airmode   ///< air-mode

@@ -94,10 +94,23 @@ public:
 		THRUST_Z
 	};
 
+	enum class AllocationPolicy : uint8_t {
+		CONFIGURED = 0,
+		ROLL_PITCH_HEADROOM = 1,
+	};
+
 	/**
 	 * Allocate control setpoint to actuators
 	 */
 	virtual void allocate() = 0;
+
+	/**
+	 * Set a transient policy for the next allocation only.
+	 * Unsupported allocation methods retain configured behavior.
+	 */
+	virtual void setAllocationPolicy(AllocationPolicy) {}
+
+	virtual AllocationPolicy getAppliedAllocationPolicy() const { return AllocationPolicy::CONFIGURED; }
 
 	/**
 	 * Set actuator failure flag

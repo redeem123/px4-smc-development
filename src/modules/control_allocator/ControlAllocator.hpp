@@ -215,6 +215,8 @@ private:
 
 	matrix::Vector3f _torque_sp;
 	matrix::Vector3f _thrust_sp;
+	uint8_t _requested_allocation_policy{vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED};
+	uint8_t _applied_allocation_policy{vehicle_torque_setpoint_s::ALLOCATION_POLICY_CONFIGURED};
 	bool _publish_controls{true};
 
 	// Reflects motor failures that are currently handled, not motor failures that are reported.
