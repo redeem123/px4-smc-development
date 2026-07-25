@@ -1,0 +1,405 @@
+
+== acceptance run 1/1: round=1 controller=3 m3p2_h2p0_aff0p75
+
+== start target=gz_uav985 controller=3 m3p2_h2p0_aff0p75
+parameter_overrides:
+  MC_AST_CFG=1
+  MC_AST_DT_MAX=0.005
+  MC_AST_DT_MIN=0.0005
+  MC_AST_EFF_P=6.978
+  MC_AST_EFF_R=6.978
+  MC_AST_EFF_Y=1.163
+  MC_AST_GYRO=1.0
+  MC_AST_J_P=0.035366
+  MC_AST_J_R=0.040461
+  MC_AST_J_Y=0.050951
+  MC_AST_K1_P=3.0
+  MC_AST_K1_R=3.0
+  MC_AST_K1_Y=1.5
+  MC_AST_K2_P=1.5
+  MC_AST_K2_R=1.5
+  MC_AST_K2_Y=1.5
+  MC_AST_RACC_P=10.0
+  MC_AST_RACC_R=10.0
+  MC_AST_RACC_Y=5.0
+  MC_AST_RFF=1.0
+  MC_AST_RJERK_P=25.0
+  MC_AST_RJERK_R=25.0
+  MC_AST_RJERK_Y=40.0
+  MC_AST_SLEW_P=5.0
+  MC_AST_SLEW_R=5.0
+  MC_AST_SLEW_Y=0.0
+  MC_AST_TAU_P=0.025
+  MC_AST_TAU_R=0.025
+  MC_AST_TAU_Y=0.0
+  MC_AST_TMAX_P=0.2
+  MC_AST_TMAX_R=0.2
+  MC_AST_TMAX_Y=0.15
+  MC_AST_TRES_P=0.1
+  MC_AST_TRES_R=0.1
+  MC_AST_TRES_Y=0.05
+  MC_BAT_SCALE_EN=0
+  MC_RATE_CTRL_T=3
+  MIS_TKO_ALT_MAX=1.0
+  SDLOG_PROFILE=25
+heartbeat target_system=1 target_component=0
+message_interval_32 -> ack command=511 result=0
+message_interval_245 -> ack command=511 result=0
+message_interval_30 -> ack command=511 result=0
+verified MC_RATE_CTRL_T=3
+verified MC_AST_CFG=1
+verified MC_BAT_SCALE_EN=0
+relative start=(0.00,-0.00,0.07)
+holding initial yaw=95.9deg
+setting OFFBOARD -> ack command=176 result=0
+arming -> ack command=400 result=0
+hold takeoff/settle:
+  pos=(0.04,-0.01,0.09) d=2.02
+  pos=(0.05,0.00,0.09) d=2.02
+  pos=(0.04,0.00,0.08) d=2.01
+  pos=(0.03,0.00,-0.15) d=1.78
+  pos=(0.01,-0.00,-0.98) d=0.95
+  pos=(-0.00,-0.01,-1.36) d=0.57
+  pos=(0.01,-0.02,-1.56) d=0.37
+  pos=(0.02,-0.04,-1.68) d=0.26
+  pos=(0.02,-0.03,-1.75) d=0.18
+  pos=(0.01,-0.02,-1.80) d=0.13
+  pos=(0.00,0.01,-1.83) d=0.10
+  pos=(0.00,0.02,-1.85) d=0.08
+  pos=(-0.01,0.01,-1.87) d=0.06
+  pos=(-0.01,-0.00,-1.89) d=0.04
+  pos=(0.01,-0.00,-1.90) d=0.03
+  hold done takeoff/settle: pos=(0.01,-0.00,-1.90) d=0.035
+smooth move east:
+  sp=(0.00,-0.00,-1.93) pos=(0.02,0.00,-1.90) d_target=0.59 d_sp=0.04
+  sp=(0.03,-0.00,-1.93) pos=(0.02,0.01,-1.90) d_target=0.59 d_sp=0.03
+  sp=(0.13,-0.00,-1.93) pos=(0.08,0.01,-1.91) d_target=0.53 d_sp=0.06
+  sp=(0.31,-0.00,-1.93) pos=(0.24,-0.01,-1.92) d_target=0.36 d_sp=0.07
+  sp=(0.48,-0.00,-1.93) pos=(0.45,-0.02,-1.92) d_target=0.16 d_sp=0.04
+  sp=(0.59,-0.00,-1.93) pos=(0.61,-0.03,-1.93) d_target=0.02 d_sp=0.03
+hold east:
+  pos=(0.65,-0.02,-1.93) d=0.05
+  pos=(0.63,0.00,-1.92) d=0.03
+  pos=(0.63,0.02,-1.93) d=0.03
+  pos=(0.63,0.02,-1.93) d=0.04
+  hold done east: pos=(0.63,0.02,-1.93) d=0.033
+smooth move north:
+  sp=(0.60,-0.00,-1.93) pos=(0.63,0.01,-1.93) d_target=0.59 d_sp=0.03
+  sp=(0.60,0.02,-1.93) pos=(0.61,-0.00,-1.93) d_target=0.60 d_sp=0.02
+  sp=(0.60,0.13,-1.93) pos=(0.60,0.07,-1.93) d_target=0.53 d_sp=0.06
+  sp=(0.60,0.30,-1.93) pos=(0.61,0.24,-1.93) d_target=0.36 d_sp=0.07
+  sp=(0.60,0.48,-1.93) pos=(0.62,0.44,-1.93) d_target=0.15 d_sp=0.04
+  sp=(0.60,0.58,-1.93) pos=(0.61,0.58,-1.92) d_target=0.02 d_sp=0.01
+hold north:
+  pos=(0.60,0.61,-1.93) d=0.02
+  pos=(0.59,0.59,-1.92) d=0.02
+  pos=(0.58,0.59,-1.92) d=0.03
+  pos=(0.59,0.61,-1.93) d=0.02
+  hold done north: pos=(0.59,0.62,-1.93) d=0.031
+smooth move west:
+  sp=(0.60,0.60,-1.93) pos=(0.59,0.63,-1.93) d_target=0.58 d_sp=0.03
+  sp=(0.58,0.60,-1.93) pos=(0.58,0.64,-1.94) d_target=0.58 d_sp=0.04
+  sp=(0.47,0.60,-1.93) pos=(0.51,0.63,-1.93) d_target=0.51 d_sp=0.05
+  sp=(0.30,0.60,-1.93) pos=(0.34,0.62,-1.94) d_target=0.34 d_sp=0.06
+  sp=(0.12,0.60,-1.93) pos=(0.14,0.61,-1.94) d_target=0.14 d_sp=0.03
+  sp=(0.02,0.60,-1.93) pos=(-0.01,0.60,-1.93) d_target=0.02 d_sp=0.03
+hold west:
+  pos=(-0.06,0.59,-1.94) d=0.06
+  pos=(-0.02,0.57,-1.94) d=0.04
+  pos=(0.01,0.56,-1.94) d=0.04
+  pos=(0.03,0.58,-1.93) d=0.03
+  hold done west: pos=(0.02,0.59,-1.94) d=0.021
+smooth move home:
+  sp=(0.00,0.60,-1.93) pos=(0.02,0.60,-1.94) d_target=0.60 d_sp=0.02
+  sp=(0.00,0.58,-1.93) pos=(0.03,0.59,-1.94) d_target=0.60 d_sp=0.03
+  sp=(0.00,0.47,-1.93) pos=(0.04,0.51,-1.94) d_target=0.52 d_sp=0.05
+  sp=(0.00,0.29,-1.93) pos=(0.03,0.36,-1.94) d_target=0.36 d_sp=0.07
+  sp=(0.00,0.12,-1.93) pos=(-0.00,0.15,-1.93) d_target=0.16 d_sp=0.04
+  sp=(0.00,0.02,-1.93) pos=(-0.01,0.01,-1.93) d_target=0.02 d_sp=0.02
+hold home:
+  pos=(0.00,-0.04,-1.92) d=0.03
+  pos=(0.01,-0.01,-1.92) d=0.02
+  pos=(0.01,-0.01,-1.93) d=0.01
+  pos=(-0.00,-0.01,-1.93) d=0.01
+  hold done home: pos=(-0.01,-0.01,-1.94) d=0.016
+yaw target yaw_positive=125.9deg
+hold yaw_positive:
+  pos=(-0.01,-0.01,-1.94) d=0.02
+  pos=(-0.02,-0.00,-1.96) d=0.03
+  pos=(-0.02,-0.02,-1.95) d=0.03
+  pos=(-0.00,-0.03,-1.93) d=0.03
+  pos=(0.01,-0.02,-1.92) d=0.03
+  pos=(0.01,-0.01,-1.92) d=0.02
+  hold done yaw_positive: pos=(0.01,-0.01,-1.92) d=0.011
+yaw target yaw_negative=65.9deg
+hold yaw_negative:
+  pos=(0.01,-0.00,-1.92) d=0.01
+  pos=(0.00,0.01,-1.95) d=0.02
+  pos=(-0.00,0.02,-1.95) d=0.03
+  pos=(0.00,0.04,-1.94) d=0.05
+  pos=(0.00,0.04,-1.93) d=0.05
+  pos=(-0.00,0.02,-1.92) d=0.02
+  hold done yaw_negative: pos=(-0.01,0.00,-1.92) d=0.017
+yaw target yaw_home=95.9deg
+hold yaw_home:
+  pos=(-0.01,-0.00,-1.92) d=0.02
+  pos=(-0.01,-0.02,-1.94) d=0.02
+  pos=(-0.00,-0.02,-1.93) d=0.01
+  pos=(-0.00,-0.01,-1.92) d=0.01
+  pos=(0.00,-0.01,-1.92) d=0.01
+  pos=(0.00,0.01,-1.91) d=0.02
+  hold done yaw_home: pos=(-0.00,0.01,-1.91) d=0.024
+switching LAND
+setting LAND -> ack command=176 result=0
+landed/disarmed pos=(0.01,0.03,0.04) landed=1
+smooth flight script done
+log=/Users/hust-hwashin621m/Desktop/px4/tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_04_10_14.ulg
+uav985_ctrl3_grid_m3p2_h2p0_aff0p75_04_10_14.ulg,track_rms=0.0357,track_p95=0.0596,track_max=0.0824,final_mean=0.0314,final_p95=0.0480,final_max=0.0539,square_final_mean=0.0289,square_final_max=0.0464,rate_err_rms=0.0084,rate_osc_rms=0.0044,torque_hf_rms=0.0073,torque_tv_rate=0.7125,torque_limit_frac=0.0152,torque_all=True,parameter_changes=0,failsafe=False,motor_max=0.741,smc_status_valid=True,astsmc_runtime_valid=True,yaw_excursion_deg=60.00,yaw_error_rms_deg=14.81,yaw_rate_max_dps=88.71,yaw_position_max=0.049
+
+== uav985_ctrl3_grid_m3p2_h2p0_aff0p75_04_10_14.ulg offboard=38.712s
+track_all_vs_trajectory_sp    n=3600 mean=0.1985 rms=0.5168 p95=1.8926 max=2.0220
+track_square_vs_trajectory_sp n=2600 mean=0.0330 rms=0.0357 p95=0.0596 max=0.0824
+final1_vs_logged_setpoint  n=625 mean=0.0314 rms=0.0331 p95=0.0480 max=0.0539
+square_final1_vs_logged_setpoint n=500 mean=0.0289 rms=0.0305 p95=0.0422 max=0.0464
+takeoff_final1                 n=125 mean=0.0413 rms=0.0420 p95=0.0527 max=0.0539
+health torque_all=True thrust_all=True failsafe=False parameter_changes=0 unalloc_torque_max=0.00000 unalloc_thrust_max=0.00000
+motors min=0.001 max=0.741 near_low=1056 near_high=0
+inner_loop:
+  roll  rate_error n=7200 mean=0.0040 rms=0.0084 p95=0.0212 max=0.0432 rate_rms=0.0229 osc_rms=0.0044 peak=9.62Hz/0.0019rad/s torque_rms=0.0033 torque_hf_rms=0.0030 torque_tv_rate=0.7125/s limit=0.2000 at_limit=0.00%
+  pitch rate_error n=7200 mean=0.0035 rms=0.0071 p95=0.0175 max=0.0412 rate_rms=0.0218 osc_rms=0.0043 peak=9.62Hz/0.0016rad/s torque_rms=0.0029 torque_hf_rms=0.0027 torque_tv_rate=0.6705/s limit=0.2000 at_limit=0.00%
+  yaw   rate_error n=7200 mean=0.0009 rms=0.0015 p95=0.0020 max=0.0179 rate_rms=0.0065 osc_rms=0.0011 peak=7.01Hz/0.0003rad/s torque_rms=0.0294 torque_hf_rms=0.0073 torque_tv_rate=0.1824/s limit=0.1500 at_limit=1.52%
+yaw_steps excursion=60.00deg error_rms=14.81deg max_rate=88.71deg/s position_error=n=1131 mean=0.0242 rms=0.0264 p95=0.0469 max=0.0489
+  segment1 target=125.94deg final_error_max=0.31deg settling=0.632s
+  segment2 target=65.94deg final_error_max=0.26deg settling=0.904s
+  segment3 target=95.94deg final_error_max=0.01deg settling=0.632s
+smc_status valid=True samples=0 diagnostics=None
+astsmc_status runtime_valid=True samples=7328 rate=199.99Hz dt_invalid=0 nonfinite_rows=0 missing=[] feedback_valid=1.0000 feedback_stale=0.0000 residual_max=0.000000 torque_match=1.0000
+astsmc_rate_alignment source=timestamp_sample matched=7328/7328 identity_max=0.000000000
+  roll  internal_sat=0.00% slide_rms=0.00367 raw_err_rms=0.00691 shape_lag_rms=0.00491 conditioned_err_rms=0.00367 nominal_rms=0.00082 residual_rms=0.00312 total_rms=0.00337 nominal_tv_rate=0.05039/s residual_tv_rate=0.52383/s total_tv_rate=0.55784/s decomposition_error=0.000000 command_mismatch=0.000000
+  pitch internal_sat=0.00% slide_rms=0.00238 raw_err_rms=0.00624 shape_lag_rms=0.00481 conditioned_err_rms=0.00238 nominal_rms=0.00071 residual_rms=0.00278 total_rms=0.00299 nominal_tv_rate=0.04768/s residual_tv_rate=0.48967/s total_tv_rate=0.52271/s decomposition_error=0.000000 command_mismatch=0.000000
+  yaw   internal_sat=3.45% slide_rms=0.10409 raw_err_rms=0.30422 shape_lag_rms=0.26965 conditioned_err_rms=0.10409 nominal_rms=0.02540 residual_rms=0.01119 total_rms=0.02987 nominal_tv_rate=0.03601/s residual_tv_rate=0.15054/s total_tv_rate=0.18253/s decomposition_error=0.000000 command_mismatch=0.000000
+controller_parameters:
+  MC_RATE_CTRL_T=3
+  MC_BAT_SCALE_EN=0
+  SDLOG_PROFILE=25
+  MC_MSMC_CFG=1
+  MC_AST_CFG=1
+  MIS_TKO_ALT_MAX=1.0
+  MC_MPC_J_R=0.04046100005507469
+  MC_MPC_J_P=0.0353659987449646
+  MC_MPC_J_Y=0.050951000303030014
+  MC_MPC_EFF_R=6.978000164031982
+  MC_MPC_EFF_P=6.978000164031982
+  MC_MPC_EFF_Y=1.1629999876022339
+  MC_MPC_Q_R=1.0
+  MC_MPC_Q_P=1.0
+  MC_MPC_Q_Y=0.699999988079071
+  MC_MPC_R_R=1.0
+  MC_MPC_R_P=1.0
+  MC_MPC_R_Y=1.0
+  MC_MPC_DU_R=0.05000000074505806
+  MC_MPC_DU_P=0.05000000074505806
+  MC_MPC_DU_Y=0.05000000074505806
+  MC_MPC_TAU=0.02500000037252903
+  MC_MPC_HORIZON=8
+  MC_MPC_SLEW=10.0
+  MC_MPC_GYRO=1.0
+  MC_MPC_TMAX_R=0.20000000298023224
+  MC_MPC_TMAX_P=0.20000000298023224
+  MC_MPC_TMAX_Y=0.10000000149011612
+  MC_AST_J_R=0.04046100005507469
+  MC_AST_J_P=0.0353659987449646
+  MC_AST_J_Y=0.050951000303030014
+  MC_AST_EFF_R=6.978000164031982
+  MC_AST_EFF_P=6.978000164031982
+  MC_AST_EFF_Y=1.1629999876022339
+  MC_AST_K1_R=3.0
+  MC_AST_K1_P=3.0
+  MC_AST_K1_Y=1.5
+  MC_AST_K2_R=1.5
+  MC_AST_K2_P=1.5
+  MC_AST_K2_Y=1.5
+  MC_AST_TMAX_R=0.20000000298023224
+  MC_AST_TMAX_P=0.20000000298023224
+  MC_AST_TMAX_Y=0.15000000596046448
+  MC_AST_RACC_R=10.0
+  MC_AST_RACC_P=10.0
+  MC_AST_RACC_Y=5.0
+  MC_AST_RJERK_R=25.0
+  MC_AST_RJERK_P=25.0
+  MC_AST_RJERK_Y=40.0
+  MC_AST_TRES_R=0.10000000149011612
+  MC_AST_TRES_P=0.10000000149011612
+  MC_AST_TRES_Y=0.05000000074505806
+  MC_AST_TAU_R=0.02500000037252903
+  MC_AST_TAU_P=0.02500000037252903
+  MC_AST_TAU_Y=0.0
+  MC_AST_SLEW_R=5.0
+  MC_AST_SLEW_P=5.0
+  MC_AST_SLEW_Y=0.0
+  MC_AST_RFF=1.0
+  MC_AST_GYRO=1.0
+  MC_AST_DT_MIN=0.0005000000237487257
+  MC_AST_DT_MAX=0.004999999888241291
+  MC_MSMC_J_R=0.04046100005507469
+  MC_MSMC_J_P=0.0353659987449646
+  MC_MSMC_J_Y=0.050951000303030014
+  MC_MSMC_EFF_R=6.978000164031982
+  MC_MSMC_EFF_P=6.978000164031982
+  MC_MSMC_EFF_Y=1.1629999876022339
+  MC_MSMC_C_R=2.0
+  MC_MSMC_C_P=2.0
+  MC_MSMC_C_Y=2.0
+  MC_MSMC_ETA_R=7.0
+  MC_MSMC_ETA_P=8.199999809265137
+  MC_MSMC_ETA_Y=1.0
+  MC_MSMC_BND_R=0.5
+  MC_MSMC_BND_P=0.5
+  MC_MSMC_BND_Y=0.20000000298023224
+  MC_MSMC_KS_R=1.0
+  MC_MSMC_KS_P=1.0
+  MC_MSMC_KS_Y=1.0
+  MC_MSMC_RSPD_L=0.0
+  MC_SMC_LPF=20.0
+  MC_SMC_SLEW=15.0
+  MC_MSMC_ILIM_R=0.30000001192092896
+  MC_MSMC_ILIM_P=0.30000001192092896
+  MC_MSMC_ILIM_Y=0.30000001192092896
+  MC_MSMC_TMAX_R=0.20000000298023224
+  MC_MSMC_TMAX_P=0.20000000298023224
+  MC_MSMC_TMAX_Y=0.15000000596046448
+waypoint_final:
+  takeoff n=125 mean=0.0413 rms=0.0420 p95=0.0527 max=0.0539
+  east    n=125 mean=0.0334 rms=0.0337 p95=0.0397 max=0.0400
+  north   n=125 mean=0.0262 rms=0.0265 p95=0.0308 max=0.0309
+  west    n=125 mean=0.0400 rms=0.0400 p95=0.0436 max=0.0464
+  home    n=125 mean=0.0160 rms=0.0169 p95=0.0260 max=0.0276
+PASS tracking RMS: 0.03568 <= 0.05000
+PASS tracking p95: 0.05956 <= 0.08000
+PASS tracking max: 0.08242 <= 0.12000
+PASS square final mean: 0.02890 <= 0.03000
+PASS square final max: 0.04643 <= 0.05500
+PASS takeoff final max: 0.05392 <= 0.08000
+PASS unallocated torque max: 0.00000 <= 0.00500
+PASS unallocated thrust max: 0.00000 <= 0.00100
+PASS motor max: 0.74096 <= 0.95000
+PASS roll rate error RMS: 0.00840 <= 0.12000
+PASS roll high-frequency rate RMS: 0.00436 <= 0.08000
+PASS roll torque-limit occupancy: 0.00000 <= 0.05000
+PASS roll torque command bound: 0.01264 <= 0.20200
+PASS roll rate excitation RMS: 0.02293 >= 0.01000
+PASS pitch rate error RMS: 0.00710 <= 0.12000
+PASS pitch high-frequency rate RMS: 0.00433 <= 0.08000
+PASS pitch torque-limit occupancy: 0.00000 <= 0.05000
+PASS pitch torque command bound: 0.01086 <= 0.20200
+PASS pitch rate excitation RMS: 0.02175 >= 0.01000
+PASS yaw rate error RMS: 0.00154 <= 0.10000
+PASS yaw high-frequency rate RMS: 0.00109 <= 0.06000
+PASS yaw torque-limit occupancy: 0.01524 <= 0.05000
+PASS yaw torque command bound: 0.15000 <= 0.15200
+PASS yaw commanded excursion: 59.99999 >= 50.00000
+PASS yaw step error RMS: 14.81304 <= 18.00000
+PASS yaw final error max: 0.30668 <= 5.00000
+PASS yaw settling max: 0.90400 <= 1.50000
+PASS yaw rate excitation: 88.70850 >= 20.00000
+PASS yaw-hold position error RMS: 0.02638 <= 0.08000
+PASS yaw-hold position error max: 0.04894 <= 0.15000
+INFO torque_all=True gated by unallocated torque threshold
+PASS ASTSMC diagnostic samples: 7328.00000 >= 100.00000
+PASS ASTSMC diagnostic rate: 199.99454 >= 100.00000
+PASS ASTSMC invalid-dt fraction: 0.00000 <= 0.00000
+PASS ASTSMC allocator feedback-valid fraction: 1.00000 >= 1.00000
+PASS ASTSMC stale allocator-feedback fraction: 0.00000 <= 0.00000
+PASS ASTSMC allocator residual norm: 0.00000 <= 0.00500
+PASS ASTSMC torque timestamp match fraction: 1.00000 >= 0.99000
+PASS ASTSMC consecutive invalid-dt holds: 0.00000 <= 0.00000
+PASS ASTSMC invalid-dt yaw-transition clusters: 0.00000 <= 0.00000
+PASS ASTSMC total-bound invariant violations: 0.00000 <= 0.00000
+PASS roll ASTSMC internal saturation: 0.00000 <= 0.05000
+PASS roll ASTSMC torque bound excess: 0.00000 <= 0.00200
+PASS roll ASTSMC residual bound excess: 0.00000 <= 0.00200
+PASS roll ASTSMC torque decomposition error: 0.00000 <= 0.00200
+PASS roll ASTSMC published command mismatch: 0.00000 <= 0.00200
+PASS pitch ASTSMC internal saturation: 0.00000 <= 0.05000
+PASS pitch ASTSMC torque bound excess: 0.00000 <= 0.00200
+PASS pitch ASTSMC residual bound excess: 0.00000 <= 0.00200
+PASS pitch ASTSMC torque decomposition error: 0.00000 <= 0.00200
+PASS pitch ASTSMC published command mismatch: 0.00000 <= 0.00200
+PASS yaw ASTSMC internal saturation: 0.03453 <= 0.05000
+PASS yaw ASTSMC torque bound excess: 0.00000 <= 0.00200
+PASS yaw ASTSMC residual bound excess: 0.00000 <= 0.00200
+PASS yaw ASTSMC torque decomposition error: 0.00000 <= 0.00200
+PASS yaw ASTSMC published command mismatch: 0.00000 <= 0.00200
+PASS failsafe clear
+PASS controller parameters unchanged in flight
+PASS thrust achieved
+PASS no motor high saturation samples
+PASS ASTSMC schema complete
+PASS ASTSMC runtime identity and configuration valid
+PASS ASTSMC diagnostics finite
+PASS ASTSMC timing bounds valid and constant
+PASS ASTSMC accepted dt matches validity and bounds
+PASS ASTSMC counters monotonic or wrapped
+PASS ASTSMC sample timestamps monotonic
+PASS ASTSMC publication timestamps valid
+PASS ASTSMC active gains match logged card
+PASS ASTSMC total-bound invariant valid
+PASS ASTSMC allocator timestamps not in future
+PASS MC_RATE_CTRL_T: logged=3 expected=3
+PASS MIS_TKO_ALT_MAX: logged=1.0 expected=1.0
+PASS MC_AST_CFG: logged=1 expected=1
+PASS MC_BAT_SCALE_EN: logged=0 expected=0
+PASS MC_AST_J_R: logged=0.04046100005507469 expected=0.040461
+PASS MC_AST_J_P: logged=0.0353659987449646 expected=0.035366
+PASS MC_AST_J_Y: logged=0.050951000303030014 expected=0.050951
+PASS MC_AST_EFF_R: logged=6.978000164031982 expected=6.978
+PASS MC_AST_EFF_P: logged=6.978000164031982 expected=6.978
+PASS MC_AST_EFF_Y: logged=1.1629999876022339 expected=1.163
+PASS MC_AST_K1_R: logged=3.0 expected=3.0
+PASS MC_AST_K1_P: logged=3.0 expected=3.0
+PASS MC_AST_K1_Y: logged=1.5 expected=1.5
+PASS MC_AST_K2_R: logged=1.5 expected=1.5
+PASS MC_AST_K2_P: logged=1.5 expected=1.5
+PASS MC_AST_K2_Y: logged=1.5 expected=1.5
+PASS MC_AST_TMAX_R: logged=0.20000000298023224 expected=0.2
+PASS MC_AST_TMAX_P: logged=0.20000000298023224 expected=0.2
+PASS MC_AST_TMAX_Y: logged=0.15000000596046448 expected=0.15
+PASS MC_AST_RACC_R: logged=10.0 expected=10.0
+PASS MC_AST_RACC_P: logged=10.0 expected=10.0
+PASS MC_AST_RACC_Y: logged=5.0 expected=5.0
+PASS MC_AST_RJERK_R: logged=25.0 expected=25.0
+PASS MC_AST_RJERK_P: logged=25.0 expected=25.0
+PASS MC_AST_RJERK_Y: logged=40.0 expected=40.0
+PASS MC_AST_TRES_R: logged=0.10000000149011612 expected=0.1
+PASS MC_AST_TRES_P: logged=0.10000000149011612 expected=0.1
+PASS MC_AST_TRES_Y: logged=0.05000000074505806 expected=0.05
+PASS MC_AST_TAU_R: logged=0.02500000037252903 expected=0.025
+PASS MC_AST_TAU_P: logged=0.02500000037252903 expected=0.025
+PASS MC_AST_TAU_Y: logged=0.0 expected=0.0
+PASS MC_AST_SLEW_R: logged=5.0 expected=5.0
+PASS MC_AST_SLEW_P: logged=5.0 expected=5.0
+PASS MC_AST_SLEW_Y: logged=0.0 expected=0.0
+PASS MC_AST_RFF: logged=1.0 expected=1.0
+PASS MC_AST_GYRO: logged=1.0 expected=1.0
+PASS MC_AST_DT_MIN: logged=0.0005000000237487257 expected=0.0005
+PASS MC_AST_DT_MAX: logged=0.004999999888241291 expected=0.005
+PASS SDLOG_PROFILE: logged=25 expected=25
+
+airborne_terminal_health:
+segment 1: airborne=37.544s terminal=6.000s
+  roll  rate_error_rms=0.0012 rate_max=0.0084 osc_rms=0.0012 peak=20.32Hz/0.0005rad/s growth=0.06x torque_max=0.0077
+    PASS terminal oscillation RMS: 0.0012 <= 0.0800
+    PASS terminal rate-error RMS: 0.0012 <= 0.1200
+    PASS terminal oscillation growth: 0.0628 <= 2.5000
+  pitch rate_error_rms=0.0012 rate_max=0.0142 osc_rms=0.0013 peak=19.15Hz/0.0005rad/s growth=0.07x torque_max=0.0078
+    PASS terminal oscillation RMS: 0.0013 <= 0.0800
+    PASS terminal rate-error RMS: 0.0012 <= 0.1200
+    PASS terminal oscillation growth: 0.0665 <= 2.5000
+  yaw   rate_error_rms=0.6322 rate_max=1.5483 osc_rms=0.0536 peak=4.16Hz/0.0031rad/s growth=0.75x torque_max=0.1500
+
+campaign artifact: tmp_mpc_logs/uav985_ctrl3_tau025_slew5_smoke.json
+
+acceptance logs:
+controller=3 round=1 /Users/hust-hwashin621m/Desktop/px4/tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_04_10_14.ulg
+
+ACCEPTANCE PASSED runs=1 move=3.20 hold=2.00 side=0.60 altitude=2.00 accel_scale=0.75

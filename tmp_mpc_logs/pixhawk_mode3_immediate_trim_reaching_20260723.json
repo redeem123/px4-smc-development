@@ -1,0 +1,505 @@
+{
+  "authority": {
+    "pitch": {
+      "control_gain": 75.0,
+      "nominal_acceleration_demand": 0.1,
+      "nominal_torque_partition": 0.1,
+      "residual_reaching_authority": 7.5
+    },
+    "roll": {
+      "control_gain": 80.0,
+      "nominal_acceleration_demand": 0.09375,
+      "nominal_torque_partition": 0.1,
+      "residual_reaching_authority": 8.0
+    },
+    "yaw": {
+      "control_gain": 15.701360130321289,
+      "nominal_acceleration_demand": 0.31844375,
+      "nominal_torque_partition": 0.04999999999999999,
+      "residual_reaching_authority": 1.570136013032129
+    }
+  },
+  "before": {
+    "MC_AST_CFG": {
+      "type": 6,
+      "value": 1
+    },
+    "MC_AST_DT_MAX": {
+      "type": 9,
+      "value": 0.004999999888241291
+    },
+    "MC_AST_DT_MIN": {
+      "type": 9,
+      "value": 0.0005000000237487257
+    },
+    "MC_AST_DU_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_EFF_P": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_EFF_R": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_EFF_Y": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_GYRO": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_J_P": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_R": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_Y": {
+      "type": 9,
+      "value": 0.050951000303030014
+    },
+    "MC_AST_K1_P": {
+      "type": 9,
+      "value": 3.0
+    },
+    "MC_AST_K1_R": {
+      "type": 9,
+      "value": 3.0
+    },
+    "MC_AST_K1_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_K2_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_RACC_P": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_R": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_Y": {
+      "type": 9,
+      "value": 5.0
+    },
+    "MC_AST_REC_ERR": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_REL_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_REL_RATE": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_RFF": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_RFF_RP": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_RJERK_P": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_R": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_Y": {
+      "type": 9,
+      "value": 40.0
+    },
+    "MC_AST_SBD_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TMAX_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_R": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_Y": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRES_P": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_R": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_Y": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRIM_ACC": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_TRIM_CMD": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRIM_DWL": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_TRIM_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TRIM_TC": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_TRK_B": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_BAT_SCALE_EN": {
+      "type": 6,
+      "value": 0
+    },
+    "MC_RATE_CTRL_T": {
+      "type": 6,
+      "value": 3
+    }
+  },
+  "target": {
+    "MC_AST_CFG": 1.0,
+    "MC_AST_DT_MAX": 0.005,
+    "MC_AST_DT_MIN": 0.0005,
+    "MC_AST_DU_P": 1.0,
+    "MC_AST_DU_R": 1.0,
+    "MC_AST_DU_Y": 0.0,
+    "MC_AST_EFF_P": 0.75,
+    "MC_AST_EFF_R": 0.8,
+    "MC_AST_EFF_Y": 0.8,
+    "MC_AST_GYRO": 1.0,
+    "MC_AST_J_P": 0.01,
+    "MC_AST_J_R": 0.01,
+    "MC_AST_J_Y": 0.050951,
+    "MC_AST_K1_P": 3.0,
+    "MC_AST_K1_R": 3.0,
+    "MC_AST_K1_Y": 1.5,
+    "MC_AST_K2_P": 1.0,
+    "MC_AST_K2_R": 1.0,
+    "MC_AST_K2_Y": 1.5,
+    "MC_AST_RACC_P": 10.0,
+    "MC_AST_RACC_R": 10.0,
+    "MC_AST_RACC_Y": 5.0,
+    "MC_AST_REC_ERR": 1.0,
+    "MC_AST_REL_ERR": 0.2,
+    "MC_AST_REL_RATE": 20.0,
+    "MC_AST_RFF": 1.0,
+    "MC_AST_RFF_RP": 0.75,
+    "MC_AST_RJERK_P": 25.0,
+    "MC_AST_RJERK_R": 25.0,
+    "MC_AST_RJERK_Y": 40.0,
+    "MC_AST_SBD_P": 0.0,
+    "MC_AST_SBD_R": 0.0,
+    "MC_AST_SBD_Y": 0.0,
+    "MC_AST_SLEW_P": 0.0,
+    "MC_AST_SLEW_R": 0.0,
+    "MC_AST_SLEW_Y": 0.0,
+    "MC_AST_TAU_P": 0.0,
+    "MC_AST_TAU_R": 0.0,
+    "MC_AST_TAU_Y": 0.0,
+    "MC_AST_TMAX_P": 0.2,
+    "MC_AST_TMAX_R": 0.2,
+    "MC_AST_TMAX_Y": 0.15,
+    "MC_AST_TRES_P": 0.1,
+    "MC_AST_TRES_R": 0.1,
+    "MC_AST_TRES_Y": 0.1,
+    "MC_AST_TRIM_ACC": 1.0,
+    "MC_AST_TRIM_CMD": 0.15,
+    "MC_AST_TRIM_DWL": 0.5,
+    "MC_AST_TRIM_ERR": 0.2,
+    "MC_AST_TRIM_TC": 20.0,
+    "MC_AST_TRK_B": 0.75,
+    "MC_BAT_SCALE_EN": 0.0,
+    "MC_RATE_CTRL_T": 3.0
+  },
+  "verified": {
+    "MC_AST_CFG": {
+      "type": 6,
+      "value": 1
+    },
+    "MC_AST_DT_MAX": {
+      "type": 9,
+      "value": 0.004999999888241291
+    },
+    "MC_AST_DT_MIN": {
+      "type": 9,
+      "value": 0.0005000000237487257
+    },
+    "MC_AST_DU_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_EFF_P": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_EFF_R": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_EFF_Y": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_GYRO": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_J_P": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_R": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_Y": {
+      "type": 9,
+      "value": 0.050951000303030014
+    },
+    "MC_AST_K1_P": {
+      "type": 9,
+      "value": 3.0
+    },
+    "MC_AST_K1_R": {
+      "type": 9,
+      "value": 3.0
+    },
+    "MC_AST_K1_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_K2_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_RACC_P": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_R": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_Y": {
+      "type": 9,
+      "value": 5.0
+    },
+    "MC_AST_REC_ERR": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_REL_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_REL_RATE": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_RFF": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_RFF_RP": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_RJERK_P": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_R": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_Y": {
+      "type": 9,
+      "value": 40.0
+    },
+    "MC_AST_SBD_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TMAX_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_R": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_Y": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRES_P": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_R": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_Y": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRIM_ACC": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_TRIM_CMD": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRIM_DWL": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_TRIM_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TRIM_TC": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_TRK_B": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_BAT_SCALE_EN": {
+      "type": 6,
+      "value": 0
+    },
+    "MC_RATE_CTRL_T": {
+      "type": 6,
+      "value": 3
+    }
+  }
+}

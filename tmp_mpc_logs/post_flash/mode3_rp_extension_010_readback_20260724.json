@@ -1,0 +1,322 @@
+{
+  "firmware": "/Users/hust-hwashin621m/Desktop/px4/build/px4_fmu-v6c_astsmc/px4_fmu-v6c_astsmc.px4",
+  "pid_baseline_log": "/Users/hust-hwashin621m/Desktop/px4/tmp_mpc_logs/mode3_second_latest_20260722.ulg",
+  "verified_card": {
+    "MC_AST_CFG": {
+      "type": 6,
+      "value": 1
+    },
+    "MC_AST_DT_MAX": {
+      "type": 9,
+      "value": 0.004999999888241291
+    },
+    "MC_AST_DT_MIN": {
+      "type": 9,
+      "value": 0.0005000000237487257
+    },
+    "MC_AST_DU_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_EFF_P": {
+      "type": 9,
+      "value": 0.5299999713897705
+    },
+    "MC_AST_EFF_R": {
+      "type": 9,
+      "value": 0.5600000023841858
+    },
+    "MC_AST_EFF_Y": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_GYRO": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_J_P": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_R": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_Y": {
+      "type": 9,
+      "value": 0.050951000303030014
+    },
+    "MC_AST_K1_P": {
+      "type": 9,
+      "value": 4.5
+    },
+    "MC_AST_K1_R": {
+      "type": 9,
+      "value": 4.5
+    },
+    "MC_AST_K1_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_K2_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_QK1_ERR": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_RACC_P": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_R": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_Y": {
+      "type": 9,
+      "value": 5.0
+    },
+    "MC_AST_REC_ERR": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_REL_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_REL_RATE": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_RFF": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_RFF_RP": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_RJERK_P": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_R": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_Y": {
+      "type": 9,
+      "value": 40.0
+    },
+    "MC_AST_RP_EXT": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_SBD_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TMAX_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_R": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_Y": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRES_P": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_R": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_Y": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRIM_ACC": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_TRIM_CMD": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRIM_DWL": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_TRIM_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TRIM_TC": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_TRK_B": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_YAW_EXT": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_BAT_SCALE_EN": {
+      "type": 6,
+      "value": 0
+    },
+    "MC_RATE_CTRL_T": {
+      "type": 6,
+      "value": 3
+    }
+  },
+  "verified_pid": {
+    "MC_PITCHRATE_D": {
+      "baseline": 0.003000000026077032,
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_PITCHRATE_FF": {
+      "baseline": 0.0,
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_PITCHRATE_I": {
+      "baseline": 0.20000000298023224,
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_PITCHRATE_K": {
+      "baseline": 1.0,
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_PITCHRATE_P": {
+      "baseline": 0.15000000596046448,
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_PR_INT_LIM": {
+      "baseline": 0.30000001192092896,
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_ROLLRATE_D": {
+      "baseline": 0.003000000026077032,
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_ROLLRATE_FF": {
+      "baseline": 0.0,
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_ROLLRATE_I": {
+      "baseline": 0.20000000298023224,
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_ROLLRATE_K": {
+      "baseline": 1.0,
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_ROLLRATE_P": {
+      "baseline": 0.15000000596046448,
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_RR_INT_LIM": {
+      "baseline": 0.30000001192092896,
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_YAWRATE_D": {
+      "baseline": 0.0,
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_FF": {
+      "baseline": 0.0,
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_I": {
+      "baseline": 0.10000000149011612,
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_YAWRATE_K": {
+      "baseline": 1.0,
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_YAWRATE_P": {
+      "baseline": 0.20000000298023224,
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_YR_INT_LIM": {
+      "baseline": 0.30000001192092896,
+      "type": 9,
+      "value": 0.30000001192092896
+    }
+  }
+}

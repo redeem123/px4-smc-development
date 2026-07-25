@@ -28,6 +28,56 @@ def looks_like_sitl_connection(connection):
     )
 
 
+def validate_authorization(args):
+    if args.sitl_ok == args.real_flight_ok:
+        raise RuntimeError("select exactly one authorization: --sitl-ok or --real-flight-ok")
+
+    if args.sitl_ok and not looks_like_sitl_connection(args.connection):
+        raise RuntimeError("--sitl-ok is only valid for an explicit localhost connection")
+
+    if args.real_flight_ok and args.expected_controller is None:
+        raise RuntimeError("real flight requires --expected-controller 0, 1, or 2; controller 3 is SITL-only")
+
+    if args.real_flight_ok and args.expected_controller == 3:
+        raise RuntimeError("controller 3 is restricted to SITL acceptance")
+
+    if args.altitude <= 0.0 or args.side <= 0.0 or args.move <= 0.0 or args.hold <= 0.0:
+        raise ValueError("altitude, side, move, and hold must be positive")
+
+    if not 0.0 <= args.yaw_step_deg <= 90.0 or args.yaw_hold <= 0.0:
+        raise ValueError("yaw step must be between 0 and 90 degrees and yaw hold must be positive")
+
+    if args.real_flight_ok and (
+        args.altitude > 1.0 or args.side > 0.5 or args.yaw_step_deg > 15.0
+    ):
+        raise RuntimeError("real-flight authorization is limited to 1m altitude, 0.5m side, and 15deg yaw steps")
+
+
+def expected_controller_parameters(controller):
+    requirements = {"MC_RATE_CTRL_T": float(controller)}
+
+    if controller == 2:
+        requirements["MC_MSMC_CFG"] = 1.0
+
+    elif controller == 3:
+        requirements.update({"MC_AST_CFG": 1.0, "MC_BAT_SCALE_EN": 0.0})
+
+    return requirements
+
+
+def verify_expected_controller(master, controller):
+    if controller is None:
+        return
+
+    for name, expected in expected_controller_parameters(controller).items():
+        actual = read_parameter(master, name)
+
+        if not math.isclose(actual, expected, abs_tol=0.01):
+            raise RuntimeError(f"{name}={actual:g}, expected {expected:g}")
+
+        print(f"verified {name}={actual:g}", flush=True)
+
+
 def send_trajectory(
     master,
     position,
@@ -157,13 +207,27 @@ def command_long(master, command, params, label, timeout=5.0):
 
 def set_message_interval(master, message_id, hz):
     interval_us = int(1_000_000 / hz)
-    command_long(
-        master,
-        mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,
-        [message_id, interval_us, 0, 0, 0, 0, 0],
-        f"message_interval_{message_id}",
-        timeout=2.0,
-    )
+
+    for attempt in range(3):
+        try:
+            command_long(
+                master,
+                mavutil.mavlink.MAV_CMD_SET_MESSAGE_INTERVAL,
+                [message_id, interval_us, 0, 0, 0, 0, 0],
+                f"message_interval_{message_id}",
+                timeout=2.0,
+            )
+            return
+
+        except RuntimeError as error:
+            if attempt == 2:
+                raise
+
+            print(
+                f"message_interval_{message_id} failed ({error}); retrying {attempt + 2}/3",
+                flush=True,
+            )
+            time.sleep(0.5)
 
 
 def set_mode(master, mode_name):
@@ -382,28 +446,9 @@ def main():
     parser.add_argument("--yaw-hold", type=float, default=3.0)
     parser.add_argument("--sitl-ok", action="store_true")
     parser.add_argument("--real-flight-ok", action="store_true")
-    parser.add_argument("--expected-controller", type=int, choices=(0, 1, 2))
+    parser.add_argument("--expected-controller", type=int, choices=(0, 1, 2, 3))
     args = parser.parse_args()
-
-    if args.sitl_ok == args.real_flight_ok:
-        raise RuntimeError("select exactly one authorization: --sitl-ok or --real-flight-ok")
-
-    if args.sitl_ok and not looks_like_sitl_connection(args.connection):
-        raise RuntimeError("--sitl-ok is only valid for an explicit localhost connection")
-
-    if args.real_flight_ok and args.expected_controller is None:
-        raise RuntimeError("real flight requires --expected-controller 0, 1, or 2")
-
-    if args.altitude <= 0.0 or args.side <= 0.0 or args.move <= 0.0 or args.hold <= 0.0:
-        raise ValueError("altitude, side, move, and hold must be positive")
-
-    if not 0.0 <= args.yaw_step_deg <= 90.0 or args.yaw_hold <= 0.0:
-        raise ValueError("yaw step must be between 0 and 90 degrees and yaw hold must be positive")
-
-    if args.real_flight_ok and (
-        args.altitude > 1.0 or args.side > 0.5 or args.yaw_step_deg > 15.0
-    ):
-        raise RuntimeError("real-flight authorization is limited to 1m altitude, 0.5m side, and 15deg yaw steps")
+    validate_authorization(args)
 
     master = mavutil.mavlink_connection(args.connection, baud=args.baud)
     if master.wait_heartbeat(timeout=10) is None:
@@ -415,23 +460,7 @@ def main():
     set_message_interval(master, mavutil.mavlink.MAVLINK_MSG_ID_EXTENDED_SYS_STATE, 10)
     set_message_interval(master, mavutil.mavlink.MAVLINK_MSG_ID_ATTITUDE, 20)
 
-    if args.expected_controller is not None:
-        controller = read_parameter(master, "MC_RATE_CTRL_T")
-
-        if not math.isclose(controller, args.expected_controller, abs_tol=0.01):
-            raise RuntimeError(
-                f"MC_RATE_CTRL_T={controller:g}, expected controller {args.expected_controller}"
-            )
-
-        print(f"verified MC_RATE_CTRL_T={controller:g}", flush=True)
-
-        if args.expected_controller == 2:
-            configuration = read_parameter(master, "MC_MSMC_CFG")
-
-            if not math.isclose(configuration, 1.0, abs_tol=0.01):
-                raise RuntimeError(f"MC_MSMC_CFG={configuration:g}, expected acknowledged model card 1")
-
-            print("verified MC_MSMC_CFG=1", flush=True)
+    verify_expected_controller(master, args.expected_controller)
 
     start_position = current_position(master)
     yaw = current_yaw(master)

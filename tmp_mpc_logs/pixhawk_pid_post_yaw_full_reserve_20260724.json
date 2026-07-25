@@ -1,0 +1,77 @@
+{
+  "reference": "/Users/hust-hwashin621m/Desktop/px4/tmp_mpc_logs/pixhawk_pid_post_quiet_anchor_20260723.json",
+  "verified": {
+    "MC_PITCHRATE_D": {
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_PITCHRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_PITCHRATE_I": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_PITCHRATE_MAX": {
+      "type": 9,
+      "value": 220.0
+    },
+    "MC_PITCHRATE_P": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_PR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_ROLLRATE_D": {
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_ROLLRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_ROLLRATE_I": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_ROLLRATE_MAX": {
+      "type": 9,
+      "value": 220.0
+    },
+    "MC_ROLLRATE_P": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_RR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_YAWRATE_D": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_I": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_YAWRATE_MAX": {
+      "type": 9,
+      "value": 30.0
+    },
+    "MC_YAWRATE_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_YR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    }
+  }
+}

@@ -1,0 +1,511 @@
+{
+  "method": {
+    "name": "empirically identified operational bound",
+    "percentile": 99.5,
+    "safety_margin": 1.25,
+    "note": "Sampled operational screening only; not a global disturbance bound, formal stability proof, or real-flight authorization."
+  },
+  "logs": [
+    {
+      "log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+      "samples": 7913,
+      "duration_s": 41.864000000000004,
+      "population": {
+        "definition": "finite, armed, confirmed-airborne, steady-window, valid-timing/card/bound/allocator, non-reset, unsaturated samples",
+        "population_samples": 16668,
+        "overlapping_exclusions": {
+          "disarmed": 5406,
+          "confirmed_landed": 6199,
+          "outside_steady_window": 5644,
+          "missing_or_nonfinite_alignment": 3330,
+          "invalid_timing_or_held_update": 8291,
+          "configuration_invalid": 3330,
+          "total_bound_invalid": 3330,
+          "reference_reset_transition": 3,
+          "allocator_feedback_invalid": 3330,
+          "allocator_feedback_stale": 3330,
+          "allocator_torque_unachieved": 3330,
+          "nominal_saturation": 387,
+          "residual_saturation": 242,
+          "actuator_constraint": 0,
+          "total_command_saturation": 3786,
+          "motor_saturation": 6157,
+          "derivative_unavailable": 8755
+        },
+        "exclusive_exclusions": {
+          "disarmed": 5406,
+          "confirmed_landed": 793,
+          "outside_steady_window": 0,
+          "missing_or_nonfinite_alignment": 2092,
+          "invalid_timing_or_held_update": 1,
+          "configuration_invalid": 0,
+          "total_bound_invalid": 0,
+          "reference_reset_transition": 2,
+          "allocator_feedback_invalid": 0,
+          "allocator_feedback_stale": 0,
+          "allocator_torque_unachieved": 0,
+          "nominal_saturation": 387,
+          "residual_saturation": 69,
+          "actuator_constraint": 0,
+          "total_command_saturation": 0,
+          "motor_saturation": 0,
+          "derivative_unavailable": 5
+        },
+        "retained_diagnostics": {
+          "maybe_landed": 84,
+          "finite_motor_samples": 16668
+        },
+        "operational_samples": 7913,
+        "adverse_envelopes": {
+          "samples": 464,
+          "axes": {
+            "roll": {
+              "residual_disturbance": {
+                "p50": 0.2109949548424208,
+                "p95": 0.3699992313887947,
+                "robust": 0.4718593154520626,
+                "max": 1.4814256999773026
+              },
+              "inferred_residual_torque": {
+                "p50": 0.001181839092168957,
+                "p95": 0.0020594751928001637,
+                "robust": 0.0023178813920821995,
+                "max": 0.008185331709682941
+              },
+              "nominal_torque": {
+                "p50": 1.069768586603459e-05,
+                "p95": 3.151686432829592e-05,
+                "robust": 0.00045147072669351573,
+                "max": 0.004638693295419216
+              },
+              "total_torque": {
+                "p50": 0.0011855406919494271,
+                "p95": 0.002090072736609727,
+                "robust": 0.00234322078875266,
+                "max": 0.008185331709682941
+              }
+            },
+            "pitch": {
+              "residual_disturbance": {
+                "p50": 0.27819012553806693,
+                "p95": 0.4920012628033016,
+                "robust": 0.583485844272265,
+                "max": 4.974394688520588
+              },
+              "inferred_residual_torque": {
+                "p50": 0.0014036116190254688,
+                "p95": 0.002041055355221033,
+                "robust": 0.002132004088489339,
+                "max": 0.02486548200249672
+              },
+              "nominal_torque": {
+                "p50": 3.592808070607134e-06,
+                "p95": 2.1565624683717027e-05,
+                "robust": 0.0005886368027131545,
+                "max": 0.004054576624184847
+              },
+              "total_torque": {
+                "p50": 0.001408746582455933,
+                "p95": 0.0020571785164065657,
+                "robust": 0.0023632614966481924,
+                "max": 0.02486548013985157
+              }
+            },
+            "yaw": {
+              "residual_disturbance": {
+                "p50": 1.9810296467955193,
+                "p95": 3.101226281197006,
+                "robust": 3.187388280208278,
+                "max": 3.260440305049587
+              },
+              "inferred_residual_torque": {
+                "p50": 0.05000000074505806,
+                "p95": 0.05000000074505806,
+                "robust": 0.05000000074505806,
+                "max": 0.05000000074505806
+              },
+              "nominal_torque": {
+                "p50": 0.10000000894069672,
+                "p95": 0.10000000894069672,
+                "robust": 0.10000000894069672,
+                "max": 0.10000000894069672
+              },
+              "total_torque": {
+                "p50": 0.10491171851754189,
+                "p95": 0.15000000596046448,
+                "robust": 0.15000000596046448,
+                "max": 0.15000000596046448
+              }
+            }
+          },
+          "vector_norms": {
+            "residual_disturbance": {
+              "p50": 2.016764647334906,
+              "p95": 3.1211128152239835,
+              "robust": 3.238125237482712,
+              "max": 5.19042195299224
+            },
+            "inferred_residual_torque": {
+              "p50": 0.050004782721927696,
+              "p95": 0.050068551220522686,
+              "robust": 0.05008413575199818,
+              "max": 0.05008724081172804
+            },
+            "nominal_torque": {
+              "p50": 0.10000000938067694,
+              "p95": 0.10000001612547277,
+              "robust": 0.10000070124857714,
+              "max": 0.10000230580596813
+            },
+            "total_torque": {
+              "p50": 0.10492018297777128,
+              "p95": 0.15001853697025397,
+              "robust": 0.1500284875310149,
+              "max": 0.1500300037981767
+            }
+          }
+        }
+      },
+      "quality": {
+        "signal_source": "astsmc_status",
+        "reference_disagreement": {
+          "rms": 0.0022628524417055416,
+          "max": 0.029191623674705625
+        },
+        "motor_saturation_fraction": 0.0,
+        "card_changes": [],
+        "unavailable_diagnostics": [
+          "actuator_constraint"
+        ]
+      },
+      "card": {
+        "inertia": [
+          0.04046100005507469,
+          0.0353659987449646,
+          0.050951000303030014
+        ],
+        "effectiveness": [
+          6.978000164031982,
+          6.978000164031982,
+          1.1629999876022339
+        ],
+        "reference_acceleration": [
+          20.0,
+          20.0,
+          5.0
+        ],
+        "reference_jerk": [
+          100.0,
+          100.0,
+          40.0
+        ],
+        "total_authority": [
+          0.20000000298023224,
+          0.20000000298023224,
+          0.15000000596046448
+        ],
+        "residual_authority": [
+          0.10000000149011612,
+          0.10000000149011612,
+          0.05000000074505806
+        ],
+        "k1": [
+          3.0,
+          3.0,
+          1.5
+        ],
+        "k2": [
+          4.5,
+          4.5,
+          1.5
+        ],
+        "reference_feedforward": 1.0,
+        "gyro_compensation": 1.0,
+        "dt_min": 0.0005000000237487257,
+        "dt_max": 0.004999999888241291
+      },
+      "axes": {
+        "roll": {
+          "disturbance": {
+            "p50": 0.2643924466075943,
+            "p95": 0.8733375484553948,
+            "robust": 2.0454380935548166,
+            "max": 2.7153593623488383
+          },
+          "disturbance_derivative": {
+            "p50": 25.809651106596736,
+            "p95": 86.74126854264895,
+            "robust": 215.50422043246232,
+            "max": 317.81679671203443
+          },
+          "inferred_residual_torque": {
+            "p50": 0.001398767693899572,
+            "p95": 0.0025212514214217664,
+            "robust": 0.00844171997159719,
+            "max": 0.011686112731695175
+          },
+          "nominal_torque": {
+            "p50": 1.0134790073834665e-07,
+            "p95": 0.002601806912571178,
+            "robust": 0.007801650501787645,
+            "max": 0.011596721597015858
+          },
+          "total_torque": {
+            "p50": 0.0014527783496305346,
+            "p95": 0.004496848676353689,
+            "robust": 0.009876105412840827,
+            "max": 0.013579566031694412
+          },
+          "bound_W": 2.5567976169435207,
+          "bound_L": 269.3802755405779,
+          "configured_residual_authority": 0.10000000149011612,
+          "screened_residual_authority": 0.014955712030329938,
+          "recommendation": {
+            "recommendation_supported": false,
+            "blocking_conditions": [
+              "k2_gt_L",
+              "k1_sufficient",
+              "nominal_full_envelope_fits",
+              "no_observed_saturation",
+              "required_diagnostics_available"
+            ],
+            "recommended_residual_authority": null
+          },
+          "nominal_saturation_fraction": 0.0,
+          "residual_saturation_fraction": 0.0,
+          "authority_feasibility": {
+            "nominal_acceleration_demand": 0.11596732331314759,
+            "available_nominal_authority": 0.10000000149011612,
+            "observed_gyro_demand_max": 1.9729609958160793e-05,
+            "residual_reaching_authority": 17.246237756145366
+          },
+          "conditions": {
+            "k2_gt_L": false,
+            "authority_gt_W_plus_k2_dt": true,
+            "k1_sufficient": false,
+            "nominal_full_envelope_fits": false,
+            "no_observed_saturation": false,
+            "required_diagnostics_available": false,
+            "k1_required": 3.4859196831321713
+          }
+        },
+        "pitch": {
+          "disturbance": {
+            "p50": 0.2701773356438135,
+            "p95": 1.0644286262623999,
+            "robust": 4.032580360981208,
+            "max": 4.896055188427414
+          },
+          "disturbance_derivative": {
+            "p50": 26.11125488826411,
+            "p95": 106.4457920518362,
+            "robust": 374.98813796528253,
+            "max": 520.1629878386783
+          },
+          "inferred_residual_torque": {
+            "p50": 0.0012399479746818542,
+            "p95": 0.002367493789643049,
+            "robust": 0.020251196995377477,
+            "max": 0.024575894698500633
+          },
+          "nominal_torque": {
+            "p50": 7.171430382868493e-08,
+            "p95": 0.0021616992074996203,
+            "robust": 0.006670058965682961,
+            "max": 0.009827250614762306
+          },
+          "total_torque": {
+            "p50": 0.00127601798158139,
+            "p95": 0.004580742120742795,
+            "robust": 0.02025119617581361,
+            "max": 0.024575892835855484
+          },
+          "bound_W": 5.04072545122651,
+          "bound_L": 468.73517245660315,
+          "configured_residual_authority": 0.10000000149011612,
+          "screened_residual_authority": 0.025661510565556756,
+          "recommendation": {
+            "recommendation_supported": false,
+            "blocking_conditions": [
+              "k2_gt_L",
+              "k1_sufficient",
+              "nominal_full_envelope_fits",
+              "no_observed_saturation",
+              "required_diagnostics_available"
+            ],
+            "recommended_residual_authority": null
+          },
+          "nominal_saturation_fraction": 0.0,
+          "residual_saturation_fraction": 0.0,
+          "authority_feasibility": {
+            "nominal_acceleration_demand": 0.10136428178164344,
+            "available_nominal_authority": 0.10000000149011612,
+            "observed_gyro_demand_max": 5.717078690383453e-06,
+            "residual_reaching_authority": 19.730816364986197
+          },
+          "conditions": {
+            "k2_gt_L": false,
+            "authority_gt_W_plus_k2_dt": true,
+            "k1_sufficient": false,
+            "nominal_full_envelope_fits": false,
+            "no_observed_saturation": false,
+            "required_diagnostics_available": false,
+            "k1_required": 3.898687086729132
+          }
+        },
+        "yaw": {
+          "disturbance": {
+            "p50": 0.06610980746792153,
+            "p95": 0.16650712420830618,
+            "robust": 0.4564611581798905,
+            "max": 1.3331143482758359
+          },
+          "disturbance_derivative": {
+            "p50": 6.640168532972866,
+            "p95": 17.891462212325,
+            "robust": 46.77539961812655,
+            "max": 194.83727871202248
+          },
+          "inferred_residual_torque": {
+            "p50": 0.002171677304431796,
+            "p95": 0.007395905163139103,
+            "robust": 0.027408984452486018,
+            "max": 0.028323929756879807
+          },
+          "nominal_torque": {
+            "p50": 2.6565089683572296e-07,
+            "p95": 0.005090331844985436,
+            "robust": 0.07319580435752852,
+            "max": 0.09976974129676819
+          },
+          "total_torque": {
+            "p50": 0.0021868611220270395,
+            "p95": 0.014544253237545473,
+            "robust": 0.08016405016183849,
+            "max": 0.11264081299304962
+          },
+          "bound_W": 0.5705764477248632,
+          "bound_L": 58.46924952265819,
+          "configured_residual_authority": 0.05000000074505806,
+          "screened_residual_authority": 0.03426123056560752,
+          "recommendation": {
+            "recommendation_supported": false,
+            "blocking_conditions": [
+              "k2_gt_L",
+              "k1_sufficient",
+              "nominal_full_envelope_fits",
+              "no_observed_saturation",
+              "required_diagnostics_available"
+            ],
+            "recommended_residual_authority": null
+          },
+          "nominal_saturation_fraction": 0.0,
+          "residual_saturation_fraction": 0.0,
+          "authority_feasibility": {
+            "nominal_acceleration_demand": 0.21904987466111708,
+            "available_nominal_authority": 0.10000000521540642,
+            "observed_gyro_demand_max": 3.979040550648629e-05,
+            "residual_reaching_authority": 1.1412926125251377
+          },
+          "conditions": {
+            "k2_gt_L": false,
+            "authority_gt_W_plus_k2_dt": true,
+            "k1_sufficient": false,
+            "nominal_full_envelope_fits": false,
+            "no_observed_saturation": false,
+            "required_diagnostics_available": false,
+            "k1_required": 3.019662065412698
+          }
+        }
+      },
+      "vector_aggregates": {
+        "residual_disturbance": {
+          "p50": 0.41067845275347614,
+          "p95": 1.5271784539514586,
+          "robust": 4.126119717162235,
+          "max": 5.061287530684227
+        },
+        "residual_disturbance_derivative": {
+          "p50": 40.49115540923956,
+          "p95": 151.82253822131764,
+          "robust": 382.8383676712349,
+          "max": 537.1793384459478
+        },
+        "inferred_residual_torque": {
+          "p50": 0.0029441349529729217,
+          "p95": 0.012429303312027096,
+          "robust": 0.027475918242254017,
+          "max": 0.02837119650682437
+        },
+        "nominal_torque": {
+          "p50": 1.2489416992453293e-06,
+          "p95": 0.007980087287544414,
+          "robust": 0.07319580441951495,
+          "max": 0.09976974156388453
+        },
+        "total_torque": {
+          "p50": 0.003190992357992685,
+          "p95": 0.01956858210847191,
+          "robust": 0.08018322264119719,
+          "max": 0.11264640983685259
+        }
+      }
+    }
+  ],
+  "aggregate": {
+    "recommendation_supported": false,
+    "axes": {
+      "roll": {
+        "recommendation_supported": false,
+        "blocking_conditions": [
+          "k1_sufficient",
+          "k2_gt_L",
+          "no_observed_saturation",
+          "nominal_full_envelope_fits",
+          "required_diagnostics_available"
+        ],
+        "screened_residual_authority": 0.014955712030329938,
+        "recommended_residual_authority": null,
+        "screened_residual_authority_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_W": 2.5567976169435207,
+        "maximum_bound_W_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_L": 269.3802755405779,
+        "maximum_bound_L_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg"
+      },
+      "pitch": {
+        "recommendation_supported": false,
+        "blocking_conditions": [
+          "k1_sufficient",
+          "k2_gt_L",
+          "no_observed_saturation",
+          "nominal_full_envelope_fits",
+          "required_diagnostics_available"
+        ],
+        "screened_residual_authority": 0.025661510565556756,
+        "recommended_residual_authority": null,
+        "screened_residual_authority_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_W": 5.04072545122651,
+        "maximum_bound_W_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_L": 468.73517245660315,
+        "maximum_bound_L_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg"
+      },
+      "yaw": {
+        "recommendation_supported": false,
+        "blocking_conditions": [
+          "k1_sufficient",
+          "k2_gt_L",
+          "no_observed_saturation",
+          "nominal_full_envelope_fits",
+          "required_diagnostics_available"
+        ],
+        "screened_residual_authority": 0.03426123056560752,
+        "recommended_residual_authority": null,
+        "screened_residual_authority_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_W": 0.5705764477248632,
+        "maximum_bound_W_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg",
+        "maximum_bound_L": 58.46924952265819,
+        "maximum_bound_L_log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_09_24.ulg"
+      }
+    }
+  }
+}

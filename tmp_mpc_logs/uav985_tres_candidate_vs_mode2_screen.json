@@ -1,0 +1,1077 @@
+{
+  "cards": {
+    "2": {
+      "MC_MSMC_BND_P": 0.5,
+      "MC_MSMC_BND_R": 0.5,
+      "MC_MSMC_BND_Y": 0.2,
+      "MC_MSMC_CFG": 1,
+      "MC_MSMC_C_P": 2.0,
+      "MC_MSMC_C_R": 2.0,
+      "MC_MSMC_C_Y": 2.0,
+      "MC_MSMC_EFF_P": 6.978,
+      "MC_MSMC_EFF_R": 6.978,
+      "MC_MSMC_EFF_Y": 1.163,
+      "MC_MSMC_ETA_P": 8.2,
+      "MC_MSMC_ETA_R": 7.0,
+      "MC_MSMC_ETA_Y": 1.0,
+      "MC_MSMC_ILIM_P": 0.3,
+      "MC_MSMC_ILIM_R": 0.3,
+      "MC_MSMC_ILIM_Y": 0.3,
+      "MC_MSMC_J_P": 0.035366,
+      "MC_MSMC_J_R": 0.040461,
+      "MC_MSMC_J_Y": 0.050951,
+      "MC_MSMC_KS_P": 1.0,
+      "MC_MSMC_KS_R": 1.0,
+      "MC_MSMC_KS_Y": 1.0,
+      "MC_MSMC_RSPD_L": 0.0,
+      "MC_MSMC_TMAX_P": 0.2,
+      "MC_MSMC_TMAX_R": 0.2,
+      "MC_MSMC_TMAX_Y": 0.15,
+      "MC_RATE_CTRL_T": 2,
+      "MC_SMC_LPF": 20.0,
+      "MC_SMC_SLEW": 15.0,
+      "MIS_TKO_ALT_MAX": 1.0
+    },
+    "3": {
+      "MC_AST_CFG": 1,
+      "MC_AST_DT_MAX": 0.005,
+      "MC_AST_DT_MIN": 0.0005,
+      "MC_AST_EFF_P": 6.978,
+      "MC_AST_EFF_R": 6.978,
+      "MC_AST_EFF_Y": 1.163,
+      "MC_AST_GYRO": 1.0,
+      "MC_AST_J_P": 0.035366,
+      "MC_AST_J_R": 0.040461,
+      "MC_AST_J_Y": 0.050951,
+      "MC_AST_K1_P": 3.0,
+      "MC_AST_K1_R": 3.0,
+      "MC_AST_K1_Y": 1.5,
+      "MC_AST_K2_P": 4.5,
+      "MC_AST_K2_R": 4.5,
+      "MC_AST_K2_Y": 1.5,
+      "MC_AST_RACC_P": 20.0,
+      "MC_AST_RACC_R": 20.0,
+      "MC_AST_RACC_Y": 5.0,
+      "MC_AST_RFF": 1.0,
+      "MC_AST_RJERK_P": 100.0,
+      "MC_AST_RJERK_R": 100.0,
+      "MC_AST_RJERK_Y": 40.0,
+      "MC_AST_TMAX_P": 0.2,
+      "MC_AST_TMAX_R": 0.2,
+      "MC_AST_TMAX_Y": 0.15,
+      "MC_AST_TRES_P": 0.09,
+      "MC_AST_TRES_R": 0.08,
+      "MC_AST_TRES_Y": 0.05,
+      "MC_BAT_SCALE_EN": 0,
+      "MC_RATE_CTRL_T": 3,
+      "MIS_TKO_ALT_MAX": 1.0
+    }
+  },
+  "command": [
+    "tmp_mpc_logs/run_uav985_mpc_acceptance.py",
+    "--controller",
+    "3",
+    "--compare-controller",
+    "2",
+    "--campaign-log",
+    "1,3,tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_29_23.ulg",
+    "--campaign-log",
+    "1,2,tmp_mpc_logs/uav985_ctrl2_grid_m3p2_h2p0_aff0p75_15_13_22.ulg",
+    "--expected-ast-residual-torque",
+    "0.08,0.09,0.05",
+    "--artifact",
+    "tmp_mpc_logs/uav985_tres_candidate_vs_mode2_screen.json"
+  ],
+  "git": {
+    "branch": "redeem123/cap-guided-takeoff-smc",
+    "dirty": true,
+    "head": "761cabff1f918fbdbf5ab23707621deef425e5f4",
+    "status_short": [
+      "M PX4_SMC_Implementation_Tutorial.md",
+      " M Tools/analyze_smc_flight.py",
+      " M Tools/test_analyze_smc_flight.py",
+      " M msg/CMakeLists.txt",
+      " M msg/ControlAllocatorStatus.msg",
+      " M msg/RateCtrlStatus.msg",
+      " M src/lib/parameters/px4params/srcparser.py",
+      " M src/lib/rate_control/CMakeLists.txt",
+      " M src/lib/rate_control/rate_control.cpp",
+      " M src/lib/rate_control/rate_control.hpp",
+      " M src/lib/rate_control/rate_control_test.cpp",
+      " M src/modules/commander/HealthAndArmingChecks/checks/systemCheck.cpp",
+      " M src/modules/commander/HealthAndArmingChecks/checks/systemCheck.hpp",
+      " M src/modules/control_allocator/ControlAllocator.cpp",
+      " M src/modules/flight_mode_manager/tasks/Auto/FlightTaskAuto.cpp",
+      " M src/modules/flight_mode_manager/tasks/Auto/FlightTaskAuto.hpp",
+      " M src/modules/logger/logged_topics.cpp",
+      " M src/modules/mc_pos_control/MulticopterPositionControl.cpp",
+      " M src/modules/mc_pos_control/MulticopterPositionControl.hpp",
+      " M src/modules/mc_pos_control/PositionControl/PositionControl.hpp",
+      " M src/modules/mc_rate_control/MulticopterRateControl.cpp",
+      " M src/modules/mc_rate_control/MulticopterRateControl.hpp",
+      " M src/modules/mc_rate_control/mc_rate_control_params.yaml",
+      " M src/modules/navigator/mission_params.yaml",
+      " M src/modules/navigator/navigator.h",
+      " M src/modules/navigator/takeoff.cpp",
+      " M src/modules/navigator/takeoff.h",
+      " M tmp_mpc_logs/analyze_offboard_square.py",
+      " M tmp_mpc_logs/offboard_square_smooth.py",
+      " M tmp_mpc_logs/run_uav985_mpc_acceptance.py",
+      " M tmp_mpc_logs/run_uav985_trajectory_grid.py",
+      " M tmp_mpc_logs/uav985_real_flight_readiness.md",
+      " M validation/module_schema.yaml",
+      "?? .agents/",
+      "?? AGENTS.md",
+      "?? Tools/identify_astsmc_residual_bounds.py",
+      "?? Tools/test_identify_astsmc_residual_bounds.py",
+      "?? Tools/test_uav985_mpc_acceptance.py",
+      "?? msg/AstsmcStatus.msg",
+      "?? tmp_mpc_logs/uav985_ctrl3_k1rp_1p5_smoke.json",
+      "?? tmp_mpc_logs/uav985_ctrl3_lifecycle_timing_residual_bounds.json",
+      "?? tmp_mpc_logs/uav985_ctrl3_lifecycle_timing_smoke.json",
+      "?? tmp_mpc_logs/uav985_ctrl3_tres_008_009_005_smoke.json",
+      "?? tmp_mpc_logs/uav985_mode2_mode3_existing_5pair_baseline.json",
+      "?? tmp_mpc_logs/uav985_mode3_existing_5log_residual_bounds.json",
+      "?? tmp_mpc_logs/uav985_tres_candidate_vs_mode2_screen.json"
+    ]
+  },
+  "metric_registry": {
+    "pitch_rate_error_rms": {
+      "absolute_margin": 0.01,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.1
+    },
+    "pitch_rate_osc_rms": {
+      "absolute_margin": 0.01,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "pitch_torque_hf_rms": {
+      "absolute_margin": 0.002,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "pitch_torque_variation_per_s": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "roll_rate_error_rms": {
+      "absolute_margin": 0.01,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.1
+    },
+    "roll_rate_osc_rms": {
+      "absolute_margin": 0.01,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "roll_torque_hf_rms": {
+      "absolute_margin": 0.002,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "roll_torque_variation_per_s": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "terminal_pitch_oscillation_rms": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "terminal_pitch_rate_error_rms": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "terminal_roll_oscillation_rms": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "terminal_roll_rate_error_rms": {
+      "absolute_margin": 0.005,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.15
+    },
+    "track_max": {
+      "absolute_margin": 0.005,
+      "class": "non_inferiority",
+      "direction": "lower",
+      "relative_margin": 0.05
+    },
+    "track_p95": {
+      "absolute_margin": 0.003,
+      "class": "non_inferiority",
+      "direction": "lower",
+      "relative_margin": 0.05
+    },
+    "track_rms": {
+      "absolute_margin": 0.002,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.05
+    },
+    "unallocated_torque_max": {
+      "absolute_margin": 0.0,
+      "class": "invariant",
+      "direction": "lower",
+      "relative_margin": 0.0
+    },
+    "yaw_final_error_max_deg": {
+      "absolute_margin": 0.25,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.05
+    },
+    "yaw_settling_max_s": {
+      "absolute_margin": 0.1,
+      "class": "primary",
+      "direction": "lower",
+      "relative_margin": 0.05
+    }
+  },
+  "paired_decisions": {
+    "0": {
+      "motor_max": {
+        "delta": 0.007269442081451416,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.007269442081451416,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "pitch_rate_error_rms": {
+        "delta": 0.008044957464483013,
+        "margin": 0.01,
+        "passed": true,
+        "regression": 0.008044957464483013,
+        "spec": {
+          "absolute_margin": 0.01,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.1
+        },
+        "status": "pass"
+      },
+      "pitch_rate_osc_rms": {
+        "delta": 0.0031818104854807695,
+        "margin": 0.01,
+        "passed": true,
+        "regression": 0.0031818104854807695,
+        "spec": {
+          "absolute_margin": 0.01,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "pitch_torque_hf_rms": {
+        "delta": 0.0011996130433556194,
+        "margin": 0.002,
+        "passed": true,
+        "regression": 0.0011996130433556194,
+        "spec": {
+          "absolute_margin": 0.002,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "pitch_torque_limit_fraction": {
+        "delta": 0.0,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "pitch_torque_peak": {
+        "delta": 0.008788848295807838,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.008788848295807838,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "pitch_torque_rms": {
+        "delta": 0.0013891748057636394,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0013891748057636394,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "pitch_torque_variation_per_s": {
+        "delta": 0.10449050979970377,
+        "margin": 0.005,
+        "passed": false,
+        "regression": 0.10449050979970377,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "fail"
+      },
+      "roll_rate_error_rms": {
+        "delta": 0.006341869945544041,
+        "margin": 0.01,
+        "passed": true,
+        "regression": 0.006341869945544041,
+        "spec": {
+          "absolute_margin": 0.01,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.1
+        },
+        "status": "pass"
+      },
+      "roll_rate_osc_rms": {
+        "delta": 0.002975598364243503,
+        "margin": 0.01,
+        "passed": true,
+        "regression": 0.002975598364243503,
+        "spec": {
+          "absolute_margin": 0.01,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "roll_torque_hf_rms": {
+        "delta": 0.001376217786153816,
+        "margin": 0.002,
+        "passed": true,
+        "regression": 0.001376217786153816,
+        "spec": {
+          "absolute_margin": 0.002,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "roll_torque_limit_fraction": {
+        "delta": 0.0,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "roll_torque_peak": {
+        "delta": 0.008928359020501375,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.008928359020501375,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "roll_torque_rms": {
+        "delta": 0.0014478183278585374,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0014478183278585374,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "roll_torque_variation_per_s": {
+        "delta": 0.12222222055428682,
+        "margin": 0.005,
+        "passed": false,
+        "regression": 0.12222222055428682,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "fail"
+      },
+      "square_final_max": {
+        "delta": 0.0020077848355545824,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0020077848355545824,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "square_final_mean": {
+        "delta": -0.000304927275134894,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -0.000304927275134894,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "terminal_pitch_growth_ratio": {
+        "delta": 0.1515853918127043,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.1515853918127043,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "terminal_pitch_oscillation_rms": {
+        "delta": 0.0034741563577000336,
+        "margin": 0.005,
+        "passed": true,
+        "regression": 0.0034741563577000336,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "terminal_pitch_rate_error_rms": {
+        "delta": 0.004318005159255428,
+        "margin": 0.005,
+        "passed": true,
+        "regression": 0.004318005159255428,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "terminal_roll_growth_ratio": {
+        "delta": 0.17341542812145314,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.17341542812145314,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "terminal_roll_oscillation_rms": {
+        "delta": 0.0033381261994009826,
+        "margin": 0.005,
+        "passed": true,
+        "regression": 0.0033381261994009826,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "terminal_roll_rate_error_rms": {
+        "delta": 0.004094411751175051,
+        "margin": 0.005,
+        "passed": true,
+        "regression": 0.004094411751175051,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.15
+        },
+        "status": "pass"
+      },
+      "track_max": {
+        "delta": 0.005256321214087742,
+        "margin": 0.005,
+        "passed": false,
+        "regression": 0.005256321214087742,
+        "spec": {
+          "absolute_margin": 0.005,
+          "class": "non_inferiority",
+          "direction": "lower",
+          "relative_margin": 0.05
+        },
+        "status": "fail"
+      },
+      "track_p95": {
+        "delta": 0.0062628867223720325,
+        "margin": 0.003,
+        "passed": false,
+        "regression": 0.0062628867223720325,
+        "spec": {
+          "absolute_margin": 0.003,
+          "class": "non_inferiority",
+          "direction": "lower",
+          "relative_margin": 0.05
+        },
+        "status": "fail"
+      },
+      "track_rms": {
+        "delta": 0.0028656977429904473,
+        "margin": 0.002,
+        "passed": false,
+        "regression": 0.0028656977429904473,
+        "spec": {
+          "absolute_margin": 0.002,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.05
+        },
+        "status": "fail"
+      },
+      "unallocated_torque_max": {
+        "delta": -1.22818234083387e-10,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -1.22818234083387e-10,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "invariant",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "invariant"
+      },
+      "yaw_error_rms_deg": {
+        "delta": -0.2511368242891461,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -0.2511368242891461,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_final_error_max_deg": {
+        "delta": -0.5106522631068333,
+        "margin": 0.25,
+        "passed": true,
+        "regression": -0.5106522631068333,
+        "spec": {
+          "absolute_margin": 0.25,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.05
+        },
+        "status": "pass"
+      },
+      "yaw_position_max": {
+        "delta": -0.0012681829711879491,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -0.0012681829711879491,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_rate_error_rms": {
+        "delta": -0.002015338336955847,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -0.002015338336955847,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_rate_osc_rms": {
+        "delta": -3.3632647952258274e-06,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -3.3632647952258274e-06,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_settling_max_s": {
+        "delta": -0.4480000000000004,
+        "margin": 0.1,
+        "passed": true,
+        "regression": -0.4480000000000004,
+        "spec": {
+          "absolute_margin": 0.1,
+          "class": "primary",
+          "direction": "lower",
+          "relative_margin": 0.05
+        },
+        "status": "pass"
+      },
+      "yaw_torque_hf_rms": {
+        "delta": 7.755462967333916e-05,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 7.755462967333916e-05,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_torque_limit_fraction": {
+        "delta": 0.006776641782907893,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.006776641782907893,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_torque_peak": {
+        "delta": 0.0002551823854446411,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.0002551823854446411,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_torque_rms": {
+        "delta": -0.007786197485411869,
+        "margin": 0.0,
+        "passed": null,
+        "regression": -0.007786197485411869,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      },
+      "yaw_torque_variation_per_s": {
+        "delta": 0.11598634792168742,
+        "margin": 0.0,
+        "passed": null,
+        "regression": 0.11598634792168742,
+        "spec": {
+          "absolute_margin": 0.0,
+          "class": "descriptive",
+          "direction": "lower",
+          "relative_margin": 0.0
+        },
+        "status": "descriptive"
+      }
+    }
+  },
+  "records": [
+    {
+      "controller": 3,
+      "failures": [],
+      "log": "tmp_mpc_logs/uav985_ctrl3_grid_m3p2_h2p0_aff0p75_01_29_23.ulg",
+      "logged_parameters": {
+        "MC_AST_CFG": 1,
+        "MC_AST_DT_MAX": 0.004999999888241291,
+        "MC_AST_DT_MIN": 0.0005000000237487257,
+        "MC_AST_EFF_P": 6.978000164031982,
+        "MC_AST_EFF_R": 6.978000164031982,
+        "MC_AST_EFF_Y": 1.1629999876022339,
+        "MC_AST_GYRO": 1.0,
+        "MC_AST_J_P": 0.0353659987449646,
+        "MC_AST_J_R": 0.04046100005507469,
+        "MC_AST_J_Y": 0.050951000303030014,
+        "MC_AST_K1_P": 3.0,
+        "MC_AST_K1_R": 3.0,
+        "MC_AST_K1_Y": 1.5,
+        "MC_AST_K2_P": 4.5,
+        "MC_AST_K2_R": 4.5,
+        "MC_AST_K2_Y": 1.5,
+        "MC_AST_RACC_P": 20.0,
+        "MC_AST_RACC_R": 20.0,
+        "MC_AST_RACC_Y": 5.0,
+        "MC_AST_RFF": 1.0,
+        "MC_AST_RJERK_P": 100.0,
+        "MC_AST_RJERK_R": 100.0,
+        "MC_AST_RJERK_Y": 40.0,
+        "MC_AST_TMAX_P": 0.20000000298023224,
+        "MC_AST_TMAX_R": 0.20000000298023224,
+        "MC_AST_TMAX_Y": 0.15000000596046448,
+        "MC_AST_TRES_P": 0.09000000357627869,
+        "MC_AST_TRES_R": 0.07999999821186066,
+        "MC_AST_TRES_Y": 0.05000000074505806,
+        "MC_BAT_SCALE_EN": 0,
+        "MC_MPC_DU_P": 0.05000000074505806,
+        "MC_MPC_DU_R": 0.05000000074505806,
+        "MC_MPC_DU_Y": 0.05000000074505806,
+        "MC_MPC_EFF_P": 6.978000164031982,
+        "MC_MPC_EFF_R": 6.978000164031982,
+        "MC_MPC_EFF_Y": 1.1629999876022339,
+        "MC_MPC_GYRO": 1.0,
+        "MC_MPC_HORIZON": 8,
+        "MC_MPC_J_P": 0.0353659987449646,
+        "MC_MPC_J_R": 0.04046100005507469,
+        "MC_MPC_J_Y": 0.050951000303030014,
+        "MC_MPC_Q_P": 1.0,
+        "MC_MPC_Q_R": 1.0,
+        "MC_MPC_Q_Y": 0.699999988079071,
+        "MC_MPC_R_P": 1.0,
+        "MC_MPC_R_R": 1.0,
+        "MC_MPC_R_Y": 1.0,
+        "MC_MPC_SLEW": 10.0,
+        "MC_MPC_TAU": 0.02500000037252903,
+        "MC_MPC_TMAX_P": 0.20000000298023224,
+        "MC_MPC_TMAX_R": 0.20000000298023224,
+        "MC_MPC_TMAX_Y": 0.10000000149011612,
+        "MC_MSMC_BND_P": 0.5,
+        "MC_MSMC_BND_R": 0.5,
+        "MC_MSMC_BND_Y": 0.20000000298023224,
+        "MC_MSMC_CFG": 1,
+        "MC_MSMC_C_P": 2.0,
+        "MC_MSMC_C_R": 2.0,
+        "MC_MSMC_C_Y": 2.0,
+        "MC_MSMC_EFF_P": 6.978000164031982,
+        "MC_MSMC_EFF_R": 6.978000164031982,
+        "MC_MSMC_EFF_Y": 1.1629999876022339,
+        "MC_MSMC_ETA_P": 8.199999809265137,
+        "MC_MSMC_ETA_R": 7.0,
+        "MC_MSMC_ETA_Y": 1.0,
+        "MC_MSMC_ILIM_P": 0.30000001192092896,
+        "MC_MSMC_ILIM_R": 0.30000001192092896,
+        "MC_MSMC_ILIM_Y": 0.30000001192092896,
+        "MC_MSMC_J_P": 0.0353659987449646,
+        "MC_MSMC_J_R": 0.04046100005507469,
+        "MC_MSMC_J_Y": 0.050951000303030014,
+        "MC_MSMC_KS_P": 1.0,
+        "MC_MSMC_KS_R": 1.0,
+        "MC_MSMC_KS_Y": 1.0,
+        "MC_MSMC_RSPD_L": 0.0,
+        "MC_MSMC_TMAX_P": 0.20000000298023224,
+        "MC_MSMC_TMAX_R": 0.20000000298023224,
+        "MC_MSMC_TMAX_Y": 0.15000000596046448,
+        "MC_RATE_CTRL_T": 3,
+        "MC_SMC_LPF": 20.0,
+        "MC_SMC_SLEW": 15.0,
+        "MIS_TKO_ALT_MAX": 1.0,
+        "SDLOG_PROFILE": 25
+      },
+      "metrics": {
+        "motor_max": 0.742644727230072,
+        "pitch_ast_conditioned_rate_error_rms": 0.011360713418199187,
+        "pitch_ast_nominal_high_frequency_rms": 0.0009270912863539212,
+        "pitch_ast_nominal_peak": 0.009628901258111,
+        "pitch_ast_nominal_rms": 0.001066229695783046,
+        "pitch_ast_nominal_saturation_fraction": 0.0,
+        "pitch_ast_nominal_variation_per_s": 0.06380924720644146,
+        "pitch_ast_raw_rate_error_rms": 0.011951433686547502,
+        "pitch_ast_reference_shaping_lag_rms": 0.0032449769774103468,
+        "pitch_ast_residual_high_frequency_rms": 0.001007208492524865,
+        "pitch_ast_residual_peak": 0.009288808330893517,
+        "pitch_ast_residual_rms": 0.0014063237833836938,
+        "pitch_ast_residual_saturation_fraction": 0.0,
+        "pitch_ast_residual_variation_per_s": 0.04343924116802003,
+        "pitch_ast_total_high_frequency_rms": 0.001459186139901412,
+        "pitch_ast_total_peak": 0.012259971350431442,
+        "pitch_ast_total_rms": 0.0018542217321195823,
+        "pitch_ast_total_saturation_fraction": 0.0,
+        "pitch_ast_total_variation_per_s": 0.09732584396345441,
+        "pitch_rate_error_rms": 0.013255310777986334,
+        "pitch_rate_osc_rms": 0.00576966474767009,
+        "pitch_torque_hf_rms": 0.001460471151687014,
+        "pitch_torque_limit_fraction": 0.0,
+        "pitch_torque_peak": 0.012259971350431442,
+        "pitch_torque_rms": 0.0018254996912669035,
+        "pitch_torque_variation_per_s": 0.11325953276427177,
+        "roll_ast_conditioned_rate_error_rms": 0.011743458133992881,
+        "roll_ast_nominal_high_frequency_rms": 0.0010711822958955463,
+        "roll_ast_nominal_peak": 0.011234577745199203,
+        "roll_ast_nominal_rms": 0.0012420554203167265,
+        "roll_ast_nominal_saturation_fraction": 0.0,
+        "roll_ast_nominal_variation_per_s": 0.07485940416709556,
+        "roll_ast_raw_rate_error_rms": 0.012339128890610862,
+        "roll_ast_reference_shaping_lag_rms": 0.0032517915005743315,
+        "roll_ast_residual_high_frequency_rms": 0.00114398857432843,
+        "roll_ast_residual_peak": 0.011804352514445782,
+        "roll_ast_residual_rms": 0.0016502718301817756,
+        "roll_ast_residual_saturation_fraction": 0.0,
+        "roll_ast_residual_variation_per_s": 0.04984504334081326,
+        "roll_ast_total_high_frequency_rms": 0.0016747270211004493,
+        "roll_ast_total_peak": 0.013658461160957813,
+        "roll_ast_total_rms": 0.0021705895524833175,
+        "roll_ast_total_saturation_fraction": 0.0,
+        "roll_ast_total_variation_per_s": 0.11300372843883023,
+        "roll_rate_error_rms": 0.014055771457923888,
+        "roll_rate_osc_rms": 0.005880944029154212,
+        "roll_torque_hf_rms": 0.001672299379981993,
+        "roll_torque_limit_fraction": 0.0,
+        "roll_torque_peak": 0.013658461160957813,
+        "roll_torque_rms": 0.0021335237005826024,
+        "roll_torque_variation_per_s": 0.1314464480719113,
+        "square_final_max": 0.048776772621525015,
+        "square_final_mean": 0.027777273006143598,
+        "terminal_pitch_growth_ratio": 0.19815241835254516,
+        "terminal_pitch_oscillation_rms": 0.004323846463210658,
+        "terminal_pitch_rate_error_rms": 0.005469002799859432,
+        "terminal_roll_growth_ratio": 0.21085302695939132,
+        "terminal_roll_oscillation_rms": 0.004078733896424823,
+        "terminal_roll_rate_error_rms": 0.005214346822368252,
+        "track_max": 0.08137564607002465,
+        "track_p95": 0.06095835073935053,
+        "track_rms": 0.03676222070629685,
+        "unallocated_torque_max": 6.72669692124442e-08,
+        "yaw_ast_conditioned_rate_error_rms": 0.10354026059226842,
+        "yaw_ast_nominal_high_frequency_rms": 0.006576435122096301,
+        "yaw_ast_nominal_peak": 0.10000000894069672,
+        "yaw_ast_nominal_rms": 0.025385609158870677,
+        "yaw_ast_nominal_saturation_fraction": 0.053113052976515564,
+        "yaw_ast_nominal_variation_per_s": 0.03598289097240152,
+        "yaw_ast_raw_rate_error_rms": 0.30339592482448563,
+        "yaw_ast_reference_shaping_lag_rms": 0.2690690638080735,
+        "yaw_ast_residual_high_frequency_rms": 0.002623296232027103,
+        "yaw_ast_residual_peak": 0.05000000074505806,
+        "yaw_ast_residual_rms": 0.011152842814999625,
+        "yaw_ast_residual_saturation_fraction": 0.03358820316766794,
+        "yaw_ast_residual_variation_per_s": 0.15126722292424846,
+        "yaw_ast_total_high_frequency_rms": 0.007366132082013579,
+        "yaw_ast_total_peak": 0.15000000596046448,
+        "yaw_ast_total_rms": 0.029851633874307445,
+        "yaw_ast_total_saturation_fraction": 0.015838339705079193,
+        "yaw_ast_total_variation_per_s": 0.18350211800322866,
+        "yaw_error_rms_deg": 15.162880524000295,
+        "yaw_final_error_max_deg": 0.3005966253722612,
+        "yaw_position_max": 0.04844151438597782,
+        "yaw_rate_error_rms": 0.0010010820673139935,
+        "yaw_rate_osc_rms": 0.0009888584910029711,
+        "yaw_settling_max_s": 0.911999999999999,
+        "yaw_torque_hf_rms": 0.0072854184178340236,
+        "yaw_torque_limit_fraction": 0.015347163420829806,
+        "yaw_torque_peak": 0.15000000596046448,
+        "yaw_torque_rms": 0.02938090067180397,
+        "yaw_torque_variation_per_s": 0.18282079035824486
+      },
+      "rate_timestamp_source": "timestamp_sample",
+      "round": 0
+    },
+    {
+      "controller": 2,
+      "failures": [],
+      "log": "tmp_mpc_logs/uav985_ctrl2_grid_m3p2_h2p0_aff0p75_15_13_22.ulg",
+      "logged_parameters": {
+        "MC_AST_CFG": 0,
+        "MC_AST_DT_MAX": 0.004999999888241291,
+        "MC_AST_DT_MIN": null,
+        "MC_AST_EFF_P": 1.0,
+        "MC_AST_EFF_R": 1.0,
+        "MC_AST_EFF_Y": 1.0,
+        "MC_AST_GYRO": 1.0,
+        "MC_AST_J_P": 0.009999999776482582,
+        "MC_AST_J_R": 0.009999999776482582,
+        "MC_AST_J_Y": 0.019999999552965164,
+        "MC_AST_K1_P": 3.0,
+        "MC_AST_K1_R": 3.0,
+        "MC_AST_K1_Y": 1.5,
+        "MC_AST_K2_P": 4.5,
+        "MC_AST_K2_R": 4.5,
+        "MC_AST_K2_Y": 1.5,
+        "MC_AST_RACC_P": 20.0,
+        "MC_AST_RACC_R": 20.0,
+        "MC_AST_RACC_Y": 5.0,
+        "MC_AST_RFF": 1.0,
+        "MC_AST_RJERK_P": 100.0,
+        "MC_AST_RJERK_R": 100.0,
+        "MC_AST_RJERK_Y": 40.0,
+        "MC_AST_TMAX_P": 0.20000000298023224,
+        "MC_AST_TMAX_R": 0.20000000298023224,
+        "MC_AST_TMAX_Y": 0.17000000178813934,
+        "MC_AST_TRES_P": 0.10000000149011612,
+        "MC_AST_TRES_R": 0.10000000149011612,
+        "MC_AST_TRES_Y": 0.05000000074505806,
+        "MC_BAT_SCALE_EN": 0,
+        "MC_MPC_DU_P": 0.05000000074505806,
+        "MC_MPC_DU_R": 0.05000000074505806,
+        "MC_MPC_DU_Y": 0.05000000074505806,
+        "MC_MPC_EFF_P": 6.978000164031982,
+        "MC_MPC_EFF_R": 6.978000164031982,
+        "MC_MPC_EFF_Y": 1.1629999876022339,
+        "MC_MPC_GYRO": 1.0,
+        "MC_MPC_HORIZON": 8,
+        "MC_MPC_J_P": 0.0353659987449646,
+        "MC_MPC_J_R": 0.04046100005507469,
+        "MC_MPC_J_Y": 0.050951000303030014,
+        "MC_MPC_Q_P": 1.0,
+        "MC_MPC_Q_R": 1.0,
+        "MC_MPC_Q_Y": 0.699999988079071,
+        "MC_MPC_R_P": 1.0,
+        "MC_MPC_R_R": 1.0,
+        "MC_MPC_R_Y": 1.0,
+        "MC_MPC_SLEW": 10.0,
+        "MC_MPC_TAU": 0.02500000037252903,
+        "MC_MPC_TMAX_P": 0.20000000298023224,
+        "MC_MPC_TMAX_R": 0.20000000298023224,
+        "MC_MPC_TMAX_Y": 0.10000000149011612,
+        "MC_MSMC_BND_P": 0.5,
+        "MC_MSMC_BND_R": 0.5,
+        "MC_MSMC_BND_Y": 0.20000000298023224,
+        "MC_MSMC_CFG": 1,
+        "MC_MSMC_C_P": 2.0,
+        "MC_MSMC_C_R": 2.0,
+        "MC_MSMC_C_Y": 2.0,
+        "MC_MSMC_EFF_P": 6.978000164031982,
+        "MC_MSMC_EFF_R": 6.978000164031982,
+        "MC_MSMC_EFF_Y": 1.1629999876022339,
+        "MC_MSMC_ETA_P": 8.199999809265137,
+        "MC_MSMC_ETA_R": 7.0,
+        "MC_MSMC_ETA_Y": 1.0,
+        "MC_MSMC_ILIM_P": 0.30000001192092896,
+        "MC_MSMC_ILIM_R": 0.30000001192092896,
+        "MC_MSMC_ILIM_Y": 0.30000001192092896,
+        "MC_MSMC_J_P": 0.0353659987449646,
+        "MC_MSMC_J_R": 0.04046100005507469,
+        "MC_MSMC_J_Y": 0.050951000303030014,
+        "MC_MSMC_KS_P": 1.0,
+        "MC_MSMC_KS_R": 1.0,
+        "MC_MSMC_KS_Y": 1.0,
+        "MC_MSMC_RSPD_L": 0.0,
+        "MC_MSMC_TMAX_P": 0.20000000298023224,
+        "MC_MSMC_TMAX_R": 0.20000000298023224,
+        "MC_MSMC_TMAX_Y": 0.15000000596046448,
+        "MC_RATE_CTRL_T": 2,
+        "MC_SMC_LPF": 20.0,
+        "MC_SMC_SLEW": 15.0,
+        "MIS_TKO_ALT_MAX": 1.0,
+        "SDLOG_PROFILE": 25
+      },
+      "metrics": {
+        "motor_max": 0.7353752851486206,
+        "pitch_rate_error_rms": 0.0052103533135033206,
+        "pitch_rate_osc_rms": 0.0025878542621893203,
+        "pitch_torque_hf_rms": 0.0002608581083313945,
+        "pitch_torque_limit_fraction": 0.0,
+        "pitch_torque_peak": 0.003471123054623604,
+        "pitch_torque_rms": 0.0004363248855032642,
+        "pitch_torque_variation_per_s": 0.008769022964567996,
+        "roll_rate_error_rms": 0.007713901512379847,
+        "roll_rate_osc_rms": 0.002905345664910709,
+        "roll_torque_hf_rms": 0.00029608159382817713,
+        "roll_torque_limit_fraction": 0.0,
+        "roll_torque_peak": 0.004730102140456438,
+        "roll_torque_rms": 0.0006857053727240649,
+        "roll_torque_variation_per_s": 0.009224227517624481,
+        "square_final_max": 0.04676898778597043,
+        "square_final_mean": 0.02808220028127849,
+        "terminal_pitch_growth_ratio": 0.04656702653984086,
+        "terminal_pitch_oscillation_rms": 0.0008496901055106248,
+        "terminal_pitch_rate_error_rms": 0.001150997640604004,
+        "terminal_roll_growth_ratio": 0.03743759883793817,
+        "terminal_roll_oscillation_rms": 0.00074060769702384,
+        "terminal_roll_rate_error_rms": 0.0011199350711932011,
+        "track_max": 0.0761193248559369,
+        "track_p95": 0.054695464016978494,
+        "track_rms": 0.033896522963306405,
+        "unallocated_torque_max": 6.738978744652758e-08,
+        "yaw_error_rms_deg": 15.414017348289441,
+        "yaw_final_error_max_deg": 0.8112488884790945,
+        "yaw_position_max": 0.049709697357165766,
+        "yaw_rate_error_rms": 0.0030164204042698404,
+        "yaw_rate_osc_rms": 0.000992221755798197,
+        "yaw_settling_max_s": 1.3599999999999994,
+        "yaw_torque_hf_rms": 0.007207863788160684,
+        "yaw_torque_limit_fraction": 0.008570521637921913,
+        "yaw_torque_peak": 0.14974482357501984,
+        "yaw_torque_rms": 0.03716709815721584,
+        "yaw_torque_variation_per_s": 0.06683444243655744
+      },
+      "rate_timestamp_source": "timestamp_sample",
+      "round": 0
+    }
+  ],
+  "scenario": {
+    "accel_scale": 0.75,
+    "altitude_m": 2.0,
+    "hold_s": 2.0,
+    "move_s": 3.2,
+    "side_m": 0.6,
+    "sitl_target": "gz_uav985",
+    "yaw_hold_s": 3.0,
+    "yaw_step_deg": 30.0
+  },
+  "schema_version": 1
+}

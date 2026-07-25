@@ -1,0 +1,404 @@
+{
+  "groups": {
+    "stock_pid_18": [
+      "MC_ROLLRATE_P",
+      "MC_ROLLRATE_I",
+      "MC_RR_INT_LIM",
+      "MC_ROLLRATE_D",
+      "MC_ROLLRATE_FF",
+      "MC_ROLLRATE_K",
+      "MC_PITCHRATE_P",
+      "MC_PITCHRATE_I",
+      "MC_PR_INT_LIM",
+      "MC_PITCHRATE_D",
+      "MC_PITCHRATE_FF",
+      "MC_PITCHRATE_K",
+      "MC_YAWRATE_P",
+      "MC_YAWRATE_I",
+      "MC_YR_INT_LIM",
+      "MC_YAWRATE_D",
+      "MC_YAWRATE_FF",
+      "MC_YAWRATE_K"
+    ],
+    "type3_card_pre_feature": [
+      "MC_AST_CFG",
+      "MC_AST_J_R",
+      "MC_AST_J_P",
+      "MC_AST_J_Y",
+      "MC_AST_EFF_R",
+      "MC_AST_EFF_P",
+      "MC_AST_EFF_Y",
+      "MC_AST_K1_R",
+      "MC_AST_K1_P",
+      "MC_AST_K1_Y",
+      "MC_AST_K2_R",
+      "MC_AST_K2_P",
+      "MC_AST_K2_Y",
+      "MC_AST_TMAX_R",
+      "MC_AST_TMAX_P",
+      "MC_AST_TMAX_Y",
+      "MC_AST_RACC_R",
+      "MC_AST_RACC_P",
+      "MC_AST_RACC_Y",
+      "MC_AST_RJERK_R",
+      "MC_AST_RJERK_P",
+      "MC_AST_RJERK_Y",
+      "MC_AST_TRES_R",
+      "MC_AST_TRES_P",
+      "MC_AST_TRES_Y",
+      "MC_AST_RP_EXT",
+      "MC_AST_RP_K1_B",
+      "MC_AST_YAW_EXT",
+      "MC_AST_TAU_R",
+      "MC_AST_TAU_P",
+      "MC_AST_TAU_Y",
+      "MC_AST_SLEW_R",
+      "MC_AST_SLEW_P",
+      "MC_AST_SLEW_Y",
+      "MC_AST_DU_R",
+      "MC_AST_DU_P",
+      "MC_AST_DU_Y",
+      "MC_AST_SBD_R",
+      "MC_AST_SBD_P",
+      "MC_AST_SBD_Y",
+      "MC_AST_TRK_B",
+      "MC_AST_RFF",
+      "MC_AST_RFF_RP",
+      "MC_AST_GYRO",
+      "MC_AST_DT_MIN",
+      "MC_AST_DT_MAX",
+      "MC_AST_REC_ERR",
+      "MC_AST_QK1_ERR",
+      "MC_AST_REL_ERR",
+      "MC_AST_REL_RATE",
+      "MC_AST_TRIM_CMD",
+      "MC_AST_TRIM_ERR",
+      "MC_AST_TRIM_ACC",
+      "MC_AST_TRIM_DWL",
+      "MC_AST_TRIM_TC",
+      "MC_BAT_SCALE_EN",
+      "MC_AIRMODE",
+      "MC_RATE_CTRL_T"
+    ],
+    "yaw_extra": [
+      "MC_YAW_TQ_CUTOFF"
+    ]
+  },
+  "heartbeat": {
+    "armed": false,
+    "component": 0,
+    "system": 1,
+    "system_status": 3
+  },
+  "parameters": {
+    "MC_AIRMODE": {
+      "type": 6,
+      "value": 0
+    },
+    "MC_AST_CFG": {
+      "type": 6,
+      "value": 1
+    },
+    "MC_AST_DT_MAX": {
+      "type": 9,
+      "value": 0.004999999888241291
+    },
+    "MC_AST_DT_MIN": {
+      "type": 9,
+      "value": 0.0005000000237487257
+    },
+    "MC_AST_DU_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_DU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_EFF_P": {
+      "type": 9,
+      "value": 0.5299999713897705
+    },
+    "MC_AST_EFF_R": {
+      "type": 9,
+      "value": 0.5600000023841858
+    },
+    "MC_AST_EFF_Y": {
+      "type": 9,
+      "value": 0.800000011920929
+    },
+    "MC_AST_GYRO": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_J_P": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_R": {
+      "type": 9,
+      "value": 0.009999999776482582
+    },
+    "MC_AST_J_Y": {
+      "type": 9,
+      "value": 0.050951000303030014
+    },
+    "MC_AST_K1_P": {
+      "type": 9,
+      "value": 4.5
+    },
+    "MC_AST_K1_R": {
+      "type": 9,
+      "value": 4.5
+    },
+    "MC_AST_K1_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_K2_P": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_R": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_K2_Y": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_QK1_ERR": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_RACC_P": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_R": {
+      "type": 9,
+      "value": 10.0
+    },
+    "MC_AST_RACC_Y": {
+      "type": 9,
+      "value": 5.0
+    },
+    "MC_AST_REC_ERR": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_REL_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_REL_RATE": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_RFF": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_RFF_RP": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_RJERK_P": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_R": {
+      "type": 9,
+      "value": 25.0
+    },
+    "MC_AST_RJERK_Y": {
+      "type": 9,
+      "value": 40.0
+    },
+    "MC_AST_RP_EXT": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_RP_K1_B": {
+      "type": 9,
+      "value": 1.5
+    },
+    "MC_AST_SBD_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SBD_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_SLEW_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_P": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_R": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TAU_Y": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_AST_TMAX_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_R": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TMAX_Y": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRES_P": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_R": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRES_Y": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_AST_TRIM_ACC": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_AST_TRIM_CMD": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_AST_TRIM_DWL": {
+      "type": 9,
+      "value": 0.5
+    },
+    "MC_AST_TRIM_ERR": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_AST_TRIM_TC": {
+      "type": 9,
+      "value": 20.0
+    },
+    "MC_AST_TRK_B": {
+      "type": 9,
+      "value": 0.75
+    },
+    "MC_AST_YAW_EXT": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_BAT_SCALE_EN": {
+      "type": 6,
+      "value": 0
+    },
+    "MC_PITCHRATE_D": {
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_PITCHRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_PITCHRATE_I": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_PITCHRATE_K": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_PITCHRATE_P": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_PR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_RATE_CTRL_T": {
+      "type": 6,
+      "value": 3
+    },
+    "MC_ROLLRATE_D": {
+      "type": 9,
+      "value": 0.003000000026077032
+    },
+    "MC_ROLLRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_ROLLRATE_I": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_ROLLRATE_K": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_ROLLRATE_P": {
+      "type": 9,
+      "value": 0.15000000596046448
+    },
+    "MC_RR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    },
+    "MC_YAWRATE_D": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_FF": {
+      "type": 9,
+      "value": 0.0
+    },
+    "MC_YAWRATE_I": {
+      "type": 9,
+      "value": 0.10000000149011612
+    },
+    "MC_YAWRATE_K": {
+      "type": 9,
+      "value": 1.0
+    },
+    "MC_YAWRATE_P": {
+      "type": 9,
+      "value": 0.20000000298023224
+    },
+    "MC_YAW_TQ_CUTOFF": {
+      "type": 9,
+      "value": 2.0
+    },
+    "MC_YR_INT_LIM": {
+      "type": 9,
+      "value": 0.30000001192092896
+    }
+  },
+  "port": "/dev/cu.usbmodem01"
+}
