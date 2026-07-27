@@ -1,0 +1,6 @@
+menuconfig SYSTEMCMDS_TYPE4_BENCH
+	bool "type4_bench"
+	default n
+	depends on MODULES_COMMANDER
+	---help---
+		Enable the disarmed Phase-1 weighted-allocation timing microbenchmark.
