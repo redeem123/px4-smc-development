@@ -69,8 +69,11 @@ void expectValidResult(const Type4WeightedAllocator::Result &result, double kkt_
 	EXPECT_LE(result.primal_residual_inf, kkt_tolerance);
 	EXPECT_TRUE(std::isfinite(result.kkt_residual_inf));
 	EXPECT_LE(result.normalized_kkt_residual_inf, kkt_tolerance);
-	EXPECT_EQ(result.faces_evaluated, Type4WeightedAllocator::NumFaces);
-	EXPECT_EQ(result.linear_solves, 65);
+	EXPECT_GE(result.iterations, 1);
+	EXPECT_LE(result.iterations, Type4WeightedAllocator::MaxIterations);
+	EXPECT_EQ(result.faces_evaluated, result.iterations);
+	EXPECT_LE(result.linear_solves, result.faces_evaluated);
+	EXPECT_FALSE(result.warm_start_hit && !result.warm_start_attempted);
 }
 
 } // namespace
@@ -276,7 +279,7 @@ TEST(Type4WeightedAllocatorTest, NarrowIntervalInteriorOptimumRemainsInterior)
 TEST(Type4WeightedAllocatorTest, RejectsInvalidInput)
 {
 	Type4WeightedAllocator allocator;
-	auto expectInvalid = [&allocator](const Type4WeightedAllocator::Problem &problem) {
+	auto expectInvalid = [&allocator](const Type4WeightedAllocator::Problem & problem) {
 		EXPECT_EQ(allocator.solve(problem).status, Type4WeightedAllocator::Status::InvalidInput);
 	};
 
@@ -341,6 +344,7 @@ TEST(Type4WeightedAllocatorTest, FloatQuantizedOptimumPassesKktValidation)
 	problem.regularization = 1e-4f;
 	problem.effectiveness(0, 0) = 1.f;
 	problem.target(0) = 0.5f;
+
 	for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
 		problem.lower_bound(actuator) = -2.f;
 		problem.upper_bound(actuator) = 2.f;
@@ -672,6 +676,8 @@ TEST(Type4WeightedAllocatorTest, RepeatedSolveIsDeterministic)
 
 	const auto first = allocator.solve(problem);
 	expectValidResult(first);
+	EXPECT_FALSE(first.warm_start_attempted);
+	EXPECT_FALSE(first.warm_start_hit);
 
 	for (int iteration = 0; iteration < 20; ++iteration) {
 		const auto repeated = allocator.solve(problem);
@@ -680,5 +686,218 @@ TEST(Type4WeightedAllocatorTest, RepeatedSolveIsDeterministic)
 		EXPECT_EQ(repeated.objective, first.objective);
 		EXPECT_EQ(repeated.lower_active_mask, first.lower_active_mask);
 		EXPECT_EQ(repeated.upper_active_mask, first.upper_active_mask);
+		EXPECT_TRUE(repeated.warm_start_attempted);
+		EXPECT_TRUE(repeated.warm_start_hit);
+		EXPECT_EQ(repeated.iterations, 1);
+	}
+}
+
+TEST(Type4WeightedAllocatorTest, ResetForcesColdStart)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+
+	for (int axis = 0; axis < Type4WeightedAllocator::NumActuators; ++axis) {
+		problem.effectiveness(axis, axis) = 1.f;
+		problem.target(axis) = 0.2f * static_cast<float>(axis + 1);
+	}
+
+	const auto first = allocator.solve(problem);
+	expectValidResult(first);
+	const auto warm = allocator.solve(problem);
+	expectValidResult(warm);
+	EXPECT_TRUE(warm.warm_start_hit);
+
+	allocator.reset();
+	const auto cold = allocator.solve(problem);
+	expectValidResult(cold);
+	EXPECT_EQ(cold.solution, first.solution);
+	EXPECT_FALSE(cold.warm_start_attempted);
+	EXPECT_FALSE(cold.warm_start_hit);
+}
+
+TEST(Type4WeightedAllocatorTest, ChangedTargetReusesUnchangedActiveFace)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+
+	for (int axis = 0; axis < Type4WeightedAllocator::NumActuators; ++axis) {
+		problem.effectiveness(axis, axis) = 1.f;
+		problem.target(axis) = (axis < 2) ? 4.f : 0.2f;
+	}
+
+	const auto first = allocator.solve(problem);
+	expectValidResult(first);
+	EXPECT_EQ(first.upper_active_mask, (1u << 0) | (1u << 1));
+
+	problem.target(0) = 5.f;
+	problem.target(1) = 3.f;
+	problem.target(2) = 0.3f;
+	problem.target(3) = -0.1f;
+	const auto changed = allocator.solve(problem);
+	expectValidResult(changed);
+	EXPECT_TRUE(changed.warm_start_attempted);
+	EXPECT_TRUE(changed.warm_start_hit);
+	EXPECT_EQ(changed.iterations, 1);
+	EXPECT_EQ(changed.upper_active_mask, first.upper_active_mask);
+}
+
+TEST(Type4WeightedAllocatorTest, ActiveFaceTransitionsAreBoundedAndWarm)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+
+	for (int axis = 0; axis < Type4WeightedAllocator::NumActuators; ++axis) {
+		problem.effectiveness(axis, axis) = 1.f;
+	}
+
+	problem.target(0) = 0.2f;
+	const auto interior = allocator.solve(problem);
+	expectValidResult(interior);
+	EXPECT_EQ(interior.upper_active_mask, 0);
+
+	problem.target(0) = 4.f;
+	const auto added = allocator.solve(problem);
+	expectValidResult(added);
+	EXPECT_TRUE(added.warm_start_attempted);
+	EXPECT_FALSE(added.warm_start_hit);
+	EXPECT_GT(added.iterations, 1);
+	EXPECT_NE(added.upper_active_mask & 1u, 0u);
+
+	problem.target(0) = 0.1f;
+	const auto dropped = allocator.solve(problem);
+	expectValidResult(dropped);
+	EXPECT_TRUE(dropped.warm_start_attempted);
+	EXPECT_FALSE(dropped.warm_start_hit);
+	EXPECT_GT(dropped.iterations, 1);
+	EXPECT_EQ(dropped.upper_active_mask & 1u, 0u);
+}
+
+TEST(Type4WeightedAllocatorTest, ChangedBoundsInvalidateOldFaceWithoutStaleState)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+	problem.effectiveness(0, 0) = 1.f;
+	problem.target(0) = 4.f;
+
+	const auto saturated = allocator.solve(problem);
+	expectValidResult(saturated);
+	EXPECT_NE(saturated.upper_active_mask & 1u, 0u);
+
+	problem.upper_bound(0) = 0.4f;
+	const auto moved_bound = allocator.solve(problem);
+	expectValidResult(moved_bound);
+	EXPECT_TRUE(moved_bound.warm_start_attempted);
+	EXPECT_TRUE(moved_bound.warm_start_hit);
+	EXPECT_EQ(moved_bound.iterations, 1);
+	EXPECT_EQ(moved_bound.solution(0), 0.4f);
+
+	problem.lower_bound(0) = -0.2f;
+	problem.upper_bound(0) = 0.2f;
+	problem.target(0) = -4.f;
+	const auto changed_face = allocator.solve(problem);
+	expectValidResult(changed_face);
+	EXPECT_TRUE(changed_face.warm_start_attempted);
+	EXPECT_FALSE(changed_face.warm_start_hit);
+	EXPECT_EQ(changed_face.solution(0), -0.2f);
+	EXPECT_NE(changed_face.lower_active_mask & 1u, 0u);
+}
+
+TEST(Type4WeightedAllocatorTest, InvalidInputClearsWarmState)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+	problem.effectiveness(0, 0) = 1.f;
+	problem.target(0) = 0.3f;
+
+	expectValidResult(allocator.solve(problem));
+	problem.num_axes = 0;
+	const auto invalid = allocator.solve(problem);
+	EXPECT_EQ(invalid.status, Type4WeightedAllocator::Status::InvalidInput);
+	EXPECT_TRUE(invalid.warm_start_attempted);
+
+	problem.num_axes = 4;
+	const auto recovered = allocator.solve(problem);
+	expectValidResult(recovered);
+	EXPECT_FALSE(recovered.warm_start_attempted);
+}
+
+TEST(Type4WeightedAllocatorTest, NumericalFailureClearsWarmState)
+{
+	Type4WeightedAllocator allocator;
+	auto valid_problem = baseProblem();
+	valid_problem.effectiveness(0, 0) = 1.f;
+	valid_problem.target(0) = 0.3f;
+	expectValidResult(allocator.solve(valid_problem));
+
+	auto unresolved_problem = baseProblem(1);
+	unresolved_problem.axis_weight(0) = 1e10f;
+
+	for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
+		unresolved_problem.effectiveness(0, actuator) = 1.f;
+	}
+
+	const auto failed = allocator.solve(unresolved_problem);
+	EXPECT_EQ(failed.status, Type4WeightedAllocator::Status::NumericalFailure);
+	EXPECT_TRUE(failed.warm_start_attempted);
+
+	const auto recovered = allocator.solve(valid_problem);
+	expectValidResult(recovered);
+	EXPECT_FALSE(recovered.warm_start_attempted);
+}
+
+TEST(Type4WeightedAllocatorTest, EqualityBoundsProduceCanonicalWarmFace)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+
+	for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
+		problem.effectiveness(actuator, actuator) = 1.f;
+		problem.lower_bound(actuator) = 0.1f * static_cast<float>(actuator + 1);
+		problem.upper_bound(actuator) = problem.lower_bound(actuator);
+	}
+
+	const auto first = allocator.solve(problem);
+	expectValidResult(first);
+	const auto repeated = allocator.solve(problem);
+	expectValidResult(repeated);
+	EXPECT_TRUE(repeated.warm_start_hit);
+	EXPECT_EQ(repeated.iterations, 1);
+	EXPECT_EQ(repeated.lower_active_mask, 0x0f);
+	EXPECT_EQ(repeated.upper_active_mask, 0x0f);
+}
+
+TEST(Type4WeightedAllocatorTest, PropagatedReachableBoundsFollowExactReturnedCommand)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+	constexpr float Dt = 0.00125f;
+	constexpr float SlewTraversalTime = 0.5f;
+	constexpr float Delta = Dt / SlewTraversalTime;
+	Type4WeightedAllocator::ActuatorVector previous_command{};
+
+	for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
+		problem.effectiveness(actuator, actuator) = 1.f;
+		previous_command(actuator) = 0.5f;
+	}
+
+	for (int sample = 0; sample < 100; ++sample) {
+		for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
+			problem.reference(actuator) = previous_command(actuator);
+			problem.lower_bound(actuator) = fmaxf(0.f, previous_command(actuator) - Delta);
+			problem.upper_bound(actuator) = fminf(1.f, previous_command(actuator) + Delta);
+			problem.target(actuator) = ((sample + actuator) & 1) ? 2.f : -1.f;
+		}
+
+		const auto result = allocator.solve(problem);
+		expectValidResult(result);
+
+		for (int actuator = 0; actuator < Type4WeightedAllocator::NumActuators; ++actuator) {
+			EXPECT_GE(result.solution(actuator), problem.lower_bound(actuator));
+			EXPECT_LE(result.solution(actuator), problem.upper_bound(actuator));
+			EXPECT_LE(fabsf(result.solution(actuator) - previous_command(actuator)), Delta + 1e-7f);
+		}
+
+		previous_command = result.solution;
 	}
 }

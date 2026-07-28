@@ -46,6 +46,7 @@ public:
 	static constexpr int NumActuators = 4;
 	static constexpr int MaxWrenchAxes = 6;
 	static constexpr int NumFaces = 81;
+	static constexpr int MaxIterations = NumFaces;
 
 	using EffectivenessMatrix = matrix::Matrix<float, MaxWrenchAxes, NumActuators>;
 	using WrenchVector = matrix::Vector<float, MaxWrenchAxes>;
@@ -77,18 +78,25 @@ public:
 		double primal_residual_inf{0.0};
 		uint8_t lower_active_mask{0};
 		uint8_t upper_active_mask{0};
+		uint8_t iterations{0};
 		uint8_t faces_evaluated{0};
 		uint8_t linear_solves{0};
+		bool warm_start_attempted{false};
+		bool warm_start_hit{false};
 		Status status{Status::InvalidInput};
 	};
 
-	Result solve(const Problem &problem) const;
+	Result solve(const Problem &problem);
+	void reset();
 
 private:
 	static double calculateObjective(const Problem &problem, const ActuatorVector &solution);
 	static bool validateProblem(const Problem &problem);
 	static bool solveCholesky(const double matrix[NumActuators][NumActuators], const double rhs[NumActuators],
-			double solution[NumActuators], int size);
+				  double solution[NumActuators], int size);
+
+	uint8_t _warm_face{0};
+	bool _warm_state_valid{false};
 };
 
 } // namespace type4_timing_bench

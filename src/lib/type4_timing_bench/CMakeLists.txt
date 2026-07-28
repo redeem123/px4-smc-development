@@ -39,5 +39,6 @@ target_include_directories(Type4TimingBench PUBLIC ${CMAKE_CURRENT_SOURCE_DIR})
 
 px4_add_unit_gtest(
 	SRC Type4WeightedAllocatorTest.cpp
+	EXTRA_SRCS Type4WeightedAllocatorOracleTest.cpp
 	LINKLIBS Type4TimingBench
 )

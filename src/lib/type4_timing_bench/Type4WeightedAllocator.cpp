@@ -114,11 +114,13 @@ double objectiveDifference(const Type4WeightedAllocator::Problem &problem,
 
 } // namespace
 
-Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &problem) const
+Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &problem)
 {
 	Result result{};
+	result.warm_start_attempted = _warm_state_valid;
 
 	if (!validateProblem(problem)) {
+		reset();
 		return result;
 	}
 
@@ -150,6 +152,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 	}
 
 	if (!PX4_ISFINITE(data_scale)) {
+		reset();
 		result.status = Status::NumericalFailure;
 		return result;
 	}
@@ -161,6 +164,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 	double linear_term[NumActuators] {};
 
 	if (!PX4_ISFINITE(scaled_regularization) || (scaled_regularization <= 0.0)) {
+		reset();
 		result.status = Status::NumericalFailure;
 		return result;
 	}
@@ -171,7 +175,6 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		for (int column = 0; column < NumActuators; ++column) {
 			hessian[row][column] = data_hessian[row][column] * inverse_objective_scale;
 		}
-
 	}
 
 	for (int actuator = 0; actuator < NumActuators; ++actuator) {
@@ -204,9 +207,14 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 	}
 
 	bool solution_found = false;
+	bool certified_solution_found = false;
 	double best_solution[NumActuators] {};
+	uint8_t best_face = 0;
+	const uint8_t first_face = result.warm_start_attempted ? _warm_face : 0;
+	const bool can_certify_early = resolved_curvature;
 
-	for (int face = 0; face < NumFaces; ++face) {
+	auto evaluate_face = [&](uint8_t face) {
+		++result.iterations;
 		++result.faces_evaluated;
 
 		double candidate[NumActuators] {};
@@ -254,7 +262,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 					}
 
 					if (!is_free) {
-						reduced_rhs[free_row] -= hessian[row][actuator] * static_cast<double>(candidate[actuator]);
+						reduced_rhs[free_row] -= hessian[row][actuator] * candidate[actuator];
 					}
 				}
 
@@ -266,7 +274,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 			++result.linear_solves;
 
 			if (!solveCholesky(reduced_hessian, reduced_rhs, free_solution, free_count)) {
-				continue;
+				return;
 			}
 
 			for (int free_index = 0; free_index < free_count; ++free_index) {
@@ -286,14 +294,16 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		}
 
 		if (!candidate_feasible) {
-			continue;
+			return;
 		}
 
 		bool candidate_better = !solution_found;
 
 		if (solution_found) {
 			const double objective_difference = objectiveDifference(problem, candidate, best_solution);
-			candidate_better = PX4_ISFINITE(objective_difference) && (objective_difference < 0.0);
+			candidate_better = PX4_ISFINITE(objective_difference)
+					   && ((objective_difference < 0.0)
+					       || (!(objective_difference > 0.0) && (face < best_face)));
 		}
 
 		if (candidate_better) {
@@ -301,19 +311,74 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 				best_solution[actuator] = candidate[actuator];
 			}
 
+			best_face = face;
 			solution_found = true;
+		}
+
+		if (!can_certify_early) {
+			return;
+		}
+
+		constexpr double StrictKktToleranceScale = 512.0 * __DBL_EPSILON__;
+		bool strictly_optimal = true;
+
+		for (int row = 0; strictly_optimal && row < NumActuators; ++row) {
+			if (problem.lower_bound(row) >= problem.upper_bound(row)) {
+				continue;
+			}
+
+			double gradient = -linear_term[row];
+			double gradient_scale = fabs(linear_term[row]);
+
+			for (int column = 0; column < NumActuators; ++column) {
+				const double contribution = hessian[row][column] * candidate[column];
+				gradient += contribution;
+				gradient_scale += fabs(contribution);
+			}
+
+			const double tolerance = StrictKktToleranceScale * gradient_scale;
+
+			switch (face_state[row]) {
+			case FaceState::Free:
+				strictly_optimal = fabs(gradient) <= tolerance;
+				break;
+
+			case FaceState::Lower:
+				strictly_optimal = gradient >= -tolerance;
+				break;
+
+			case FaceState::Upper:
+				strictly_optimal = gradient <= tolerance;
+				break;
+			}
+		}
+
+		if (strictly_optimal) {
+			for (int actuator = 0; actuator < NumActuators; ++actuator) {
+				best_solution[actuator] = candidate[actuator];
+			}
+
+			best_face = face;
+			certified_solution_found = true;
+		}
+	};
+
+	evaluate_face(first_face);
+
+	for (uint8_t face = 0; !certified_solution_found && face < NumFaces; ++face) {
+		if (face != first_face) {
+			evaluate_face(face);
 		}
 	}
 
-	if (!resolved_curvature) {
+	if (!solution_found || ((domain_size > 0) && !resolved_curvature)) {
+		reset();
 		result.status = Status::NumericalFailure;
 		return result;
 	}
 
-	if (!solution_found) {
-		result.status = Status::NumericalFailure;
-		return result;
-	}
+	result.warm_start_hit = result.warm_start_attempted && certified_solution_found && (best_face == first_face)
+				&& (result.iterations == 1);
 
 	for (int actuator = 0; actuator < NumActuators; ++actuator) {
 		result.solution(actuator) = static_cast<float>(best_solution[actuator]);
@@ -346,6 +411,9 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		}
 	}
 
+	uint8_t warm_face = 0;
+	uint8_t face_multiplier = 1;
+
 	for (int actuator = 0; actuator < NumActuators; ++actuator) {
 		const double regularization = static_cast<double>(problem.regularization);
 		const double solution = static_cast<double>(result.solution(actuator));
@@ -357,26 +425,32 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		const bool at_lower_bound = result.solution(actuator) <= problem.lower_bound(actuator);
 		const bool at_upper_bound = result.solution(actuator) >= problem.upper_bound(actuator);
 		double stationarity_violation = fabs(gradient[actuator]);
+		uint8_t canonical_face_state = static_cast<uint8_t>(FaceState::Free);
 
 		if (equality_bound) {
 			result.lower_active_mask |= 1u << actuator;
 			result.upper_active_mask |= 1u << actuator;
 			stationarity_violation = 0.0;
+			canonical_face_state = static_cast<uint8_t>(FaceState::Lower);
 
 		} else if (at_lower_bound) {
 			result.lower_active_mask |= 1u << actuator;
 			stationarity_violation = fmax(-gradient[actuator], 0.0);
+			canonical_face_state = static_cast<uint8_t>(FaceState::Lower);
 
 		} else if (at_upper_bound) {
 			result.upper_active_mask |= 1u << actuator;
 			stationarity_violation = fmax(gradient[actuator], 0.0);
+			canonical_face_state = static_cast<uint8_t>(FaceState::Upper);
 		}
 
+		warm_face += canonical_face_state * face_multiplier;
+		face_multiplier *= 3;
 		result.kkt_residual_inf = fmax(result.kkt_residual_inf, stationarity_violation);
 
 		if (gradient_roundoff_scale[actuator] > 0.0) {
 			result.normalized_kkt_residual_inf = fmax(result.normalized_kkt_residual_inf,
-					stationarity_violation / gradient_roundoff_scale[actuator]);
+							     stationarity_violation / gradient_roundoff_scale[actuator]);
 
 		} else if (stationarity_violation > 0.0) {
 			result.normalized_kkt_residual_inf = HUGE_VAL;
@@ -394,6 +468,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 
 	if (!PX4_ISFINITE(result.objective) || !PX4_ISFINITE(result.kkt_residual_inf)
 	    || !PX4_ISFINITE(result.normalized_kkt_residual_inf) || !PX4_ISFINITE(result.primal_residual_inf)) {
+		reset();
 		result.status = Status::NumericalFailure;
 		return result;
 	}
@@ -402,17 +477,30 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 
 	if ((result.primal_residual_inf > ValidationKktTolerance)
 	    || (result.normalized_kkt_residual_inf > ValidationKktTolerance)) {
+		const uint8_t iterations = result.iterations;
 		const uint8_t faces_evaluated = result.faces_evaluated;
 		const uint8_t linear_solves = result.linear_solves;
+		const bool warm_start_attempted = result.warm_start_attempted;
+		reset();
 		result = Result{};
+		result.iterations = iterations;
 		result.faces_evaluated = faces_evaluated;
 		result.linear_solves = linear_solves;
+		result.warm_start_attempted = warm_start_attempted;
 		result.status = Status::NumericalFailure;
 		return result;
 	}
 
+	_warm_face = warm_face;
+	_warm_state_valid = true;
 	result.status = Status::Success;
 	return result;
+}
+
+void Type4WeightedAllocator::reset()
+{
+	_warm_face = 0;
+	_warm_state_valid = false;
 }
 
 double Type4WeightedAllocator::calculateObjective(const Problem &problem, const ActuatorVector &solution)
@@ -424,7 +512,7 @@ double Type4WeightedAllocator::calculateObjective(const Problem &problem, const 
 
 		for (int actuator = 0; actuator < NumActuators; ++actuator) {
 			modeled_wrench += static_cast<double>(problem.effectiveness(axis, actuator))
-					   * static_cast<double>(solution(actuator));
+					  * static_cast<double>(solution(actuator));
 		}
 
 		const double weighted_residual = static_cast<double>(problem.axis_weight(axis))

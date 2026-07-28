@@ -39,6 +39,7 @@ px4_add_module(
 		"SCHED_PRIORITY_MAX - 18"
 	SRCS
 		type4_bench.cpp
+		type4_bench_platform.cpp
 	DEPENDS
 		Type4TimingBench
 )
