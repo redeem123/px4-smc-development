@@ -68,7 +68,13 @@ namespace
 constexpr int DefaultSamples = 1000;
 constexpr int MaxSamples = 2048;
 constexpr int GyroIntervalSamples = 256;
-constexpr float NormalizedKktTolerance = 1e-3f;
+// Deliberately tighter than the solver's own 1e-4 acceptance gate, so this check can
+// actually fire. A bench tolerance at or above what the solver already enforces is
+// unreachable and reports optimality the bench never independently confirmed. Measured
+// worst normalized KKT residual across 4000 varied problems is 3.3e-8 with an exactly
+// zero primal residual, so 1e-6 keeps well over an order of magnitude of margin while
+// still catching a solver that starts accepting only marginally optimal points.
+constexpr float NormalizedKktTolerance = 1e-6f;
 constexpr float BenchmarkSlewTraversalFallback = 0.5f;
 constexpr float DefaultResourceLimitPercent = 95.f;
 constexpr double MaxObservedRateErrorFraction = 0.25;
@@ -79,7 +85,18 @@ constexpr uint32_t GyroPollTimeoutMs = 1000;
 uint32_t timing_samples[MaxSamples];
 uint32_t iteration_samples[MaxSamples];
 uint32_t gyro_interval_samples[GyroIntervalSamples];
-px4::atomic<px4_task_t> benchmark_owner{-1};
+// The benchmark runs in its own task rather than in the calling shell. The shell task
+// sits far below the rate controller in priority and is driven over the MAVLink serial
+// tunnel, so measuring there reports the shell's scheduling luck and the shell's stack
+// instead of what the allocator would actually see on the rate-control path.
+constexpr int BenchmarkTaskStackSize = 4000;
+constexpr int BenchmarkPollIntervalUs = 50 * 1000;
+
+px4::atomic<bool> benchmark_running{false};
+px4::atomic<bool> benchmark_finished{false};
+px4::atomic<int> benchmark_result{1};
+int requested_sample_count{DefaultSamples};
+int requested_budget_us{0};
 volatile sig_atomic_t cancellation_requested{0};
 
 #if defined(__PX4_NUTTX)
@@ -129,19 +146,26 @@ struct ScenarioMetrics {
 };
 
 struct BenchmarkOwnerGuard {
-	explicit BenchmarkOwnerGuard(px4_task_t owner) :
-		_owner(owner)
+	~BenchmarkOwnerGuard()
+	{
+		benchmark_finished.store(true);
+		benchmark_running.store(false);
+	}
+};
+
+struct GyroSubscriptionGuard {
+	explicit GyroSubscriptionGuard(orb_sub_t subscription) :
+		_subscription(subscription)
 	{
 	}
 
-	~BenchmarkOwnerGuard()
+	~GyroSubscriptionGuard()
 	{
-		px4_task_t expected_owner = _owner;
-		benchmark_owner.compare_exchange(&expected_owner, -1);
+		orb_unsubscribe(_subscription);
 	}
 
 private:
-	px4_task_t _owner;
+	orb_sub_t _subscription;
 };
 
 struct RuntimeMeasurementGuard {
@@ -460,8 +484,25 @@ bool runScenario(Type4WeightedAllocator &allocator, uORB::Subscription &vehicle_
 	}
 
 	allocator.reset();
-	const hrt_abstime scenario_epoch = hrt_absolute_time() + period_us;
-	uint64_t release_index = 0;
+
+	// Releases come from the gyro publication, not from a timer sleep. The rate
+	// controller is woken by this same topic, and the 1 ms NuttX tick cannot express
+	// the sub-millisecond periods this gate targets at all: a px4_usleep-driven loop
+	// rounds every release up to a tick boundary and reports a skip on every sample,
+	// measuring the tick granularity rather than the allocator.
+	orb_sub_t gyro_sub = orb_subscribe(ORB_ID(vehicle_angular_velocity));
+
+	if (gyro_sub < 0) {
+		PX4_ERR("%s failed to subscribe vehicle_angular_velocity", scenarioName(scenario));
+		return false;
+	}
+
+	GyroSubscriptionGuard gyro_subscription_guard{gyro_sub};
+	px4_pollfd_struct_t poll_fd{};
+	poll_fd.fd = gyro_sub;
+	poll_fd.events = POLLIN;
+	vehicle_angular_velocity_s angular_velocity{};
+	hrt_abstime previous_release = 0;
 
 	for (int sample = 0; sample < sample_count; ++sample) {
 		if (cancellation_requested != 0) {
@@ -469,23 +510,38 @@ bool runScenario(Type4WeightedAllocator &allocator, uORB::Subscription &vehicle_
 			return false;
 		}
 
-		const hrt_abstime scheduled_release = scenario_epoch + release_index * period_us;
-		hrt_abstime now = hrt_absolute_time();
+		const int poll_result = px4_poll(&poll_fd, 1, GyroPollTimeoutMs);
 
-		if (now < scheduled_release) {
-			px4_usleep(scheduled_release - now);
-			now = hrt_absolute_time();
+		if ((poll_result <= 0) || !(poll_fd.revents & POLLIN)
+		    || (orb_copy(ORB_ID(vehicle_angular_velocity), gyro_sub, &angular_velocity) != PX4_OK)
+		    || (angular_velocity.timestamp_sample == 0)) {
+			PX4_ERR("%s lost gyro release at sample %d", scenarioName(scenario), sample);
+			return false;
 		}
 
+		const hrt_abstime scheduled_release = angular_velocity.timestamp_sample;
+		const hrt_abstime now = hrt_absolute_time();
+
+		// Lateness is the wake-up delay from the sample the release corresponds to, so
+		// it charges the benchmark for scheduling latency the same way the rate
+		// controller would experience it.
 		if (now > scheduled_release) {
 			const hrt_abstime lateness = now - scheduled_release;
 			metrics.worst_release_lateness = fmax(metrics.worst_release_lateness,
 							      static_cast<uint32_t>(fmin(static_cast<double>(lateness), static_cast<double>(UINT32_MAX))));
-
-			const uint64_t missed_periods = lateness / period_us;
-			metrics.skipped_releases += missed_periods;
-			release_index += missed_periods;
 		}
+
+		// A gap wider than one and a half periods means a gyro release was published
+		// while this task was not back at the poll yet.
+		if (previous_release != 0) {
+			const hrt_abstime gap = scheduled_release - previous_release;
+
+			if (gap > (period_us + period_us / 2)) {
+				metrics.skipped_releases += (gap / period_us) - 1;
+			}
+		}
+
+		previous_release = scheduled_release;
 
 		if (!vehicleIsFreshAndDisarmed(vehicle_status_sub, actuator_armed_sub)) {
 			PX4_ERR("%s aborted before sample %d", scenarioName(scenario), sample);
@@ -546,7 +602,6 @@ bool runScenario(Type4WeightedAllocator &allocator, uORB::Subscription &vehicle_
 		}
 
 		metrics.loop_deadline_misses += hrt_absolute_time() > (scheduled_release + period_us);
-		release_index++;
 	}
 
 	metrics.timing = summarize(timing_samples, sample_count);
@@ -593,7 +648,7 @@ void printUsage()
 
 } // namespace
 
-extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
+int runBenchmark()
 {
 	const px4_task_t current_task = px4_getpid();
 
@@ -602,34 +657,7 @@ extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
 		return 1;
 	}
 
-	for (;;) {
-		const px4_task_t observed_owner = benchmark_owner.load();
-
-		if (observed_owner >= 0) {
-			bool owner_alive = false;
-
-#if defined(__PX4_NUTTX)
-			errno = 0;
-			owner_alive = (kill(observed_owner, 0) == 0) || (errno == EPERM);
-#else
-			const int probe_result = px4_task_kill(observed_owner, 0);
-			owner_alive = (probe_result == 0) || (probe_result == EPERM);
-#endif
-
-			if (owner_alive) {
-				PX4_ERR("benchmark already running");
-				return 1;
-			}
-		}
-
-		px4_task_t expected_owner = observed_owner;
-
-		if (benchmark_owner.compare_exchange(&expected_owner, current_task)) {
-			break;
-		}
-	}
-
-	BenchmarkOwnerGuard benchmark_owner_guard{current_task};
+	BenchmarkOwnerGuard benchmark_owner_guard{};
 	cancellation_requested = 0;
 
 #if defined(__PX4_NUTTX)
@@ -663,34 +691,8 @@ extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
 	uORB::Subscription vehicle_status_sub{ORB_ID(vehicle_status)};
 	uORB::Subscription actuator_armed_sub{ORB_ID(actuator_armed)};
 	uORB::Subscription cpuload_sub{ORB_ID(cpuload)};
-	int sample_count = DefaultSamples;
-	int budget_override_us = 0;
-
-	for (int argument = 1; argument < argc; ++argument) {
-		const bool sample_option = strcmp(argv[argument], "-n") == 0;
-		const bool budget_option = strcmp(argv[argument], "-b") == 0;
-
-		if (!sample_option && !budget_option) {
-			printUsage();
-			return 1;
-		}
-
-		if (++argument >= argc) {
-			printUsage();
-			return 1;
-		}
-
-		if (sample_option) {
-			if (!parsePositiveInt(argv[argument], MaxSamples, sample_count)) {
-				printUsage();
-				return 1;
-			}
-
-		} else if (!parsePositiveInt(argv[argument], INT_MAX, budget_override_us)) {
-			printUsage();
-			return 1;
-		}
-	}
+	const int sample_count = requested_sample_count;
+	const int budget_override_us = requested_budget_us;
 
 	if (!vehicleIsFreshAndDisarmed(vehicle_status_sub, actuator_armed_sub)) {
 		return 1;
@@ -786,17 +788,29 @@ extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
 	Type4WeightedAllocator allocator;
 	uint32_t overall_worst_solve = 0;
 	uint32_t overall_worst_lateness = 0;
+	bool any_scenario_failed = false;
 	float peak_cpu_load = latest_resources.cpu_load;
 	float peak_ram_usage = latest_resources.ram_usage;
 
 	for (uint8_t scenario_index = 0; scenario_index <= static_cast<uint8_t>(Scenario::RapidlySwitching); ++scenario_index) {
 		ScenarioMetrics metrics{};
 
+		// A failing scenario is recorded and the sweep continues. Returning here would
+		// leave the remaining scenarios unmeasured, and those carry the higher face
+		// counts, so an early exit hides exactly the numbers the gate exists to find.
 		if (!runScenario(allocator, vehicle_status_sub, actuator_armed_sub, cpuload_sub, latest_resources,
 				 static_cast<Scenario>(scenario_index), sample_count, budget_us, configured_period_us,
 				 slew_traversal_time, metrics)) {
 			PX4_ERR("%s scenario failed predeclared timing/deadline gate", scenarioName(static_cast<Scenario>(scenario_index)));
-			return 1;
+			any_scenario_failed = true;
+
+			// Timing failures are data. Losing the gyro release, being cancelled, or the
+			// vehicle arming underneath the benchmark are not, and none of them get to
+			// keep loading the CPU while the state that invalidated the run persists.
+			if ((cancellation_requested != 0)
+			    || !vehicleIsFreshAndDisarmed(vehicle_status_sub, actuator_armed_sub)) {
+				return 1;
+			}
 		}
 
 		overall_worst_solve = fmax(overall_worst_solve, metrics.timing.maximum);
@@ -863,7 +877,7 @@ extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
 		 (double)(peak_cpu_load * 100.f), (double)(peak_ram_usage * 100.f), static_cast<long long>(conservative_margin));
 	printLatencyDelta(latency_before, latency_after);
 
-	if ((rate_ctrl_runtime == 0) || (stack_usage.free < required_stack_free)
+	if (any_scenario_failed || (rate_ctrl_runtime == 0) || (stack_usage.free < required_stack_free)
 	    || (peak_cpu_load * 100.f >= cpu_limit_percent) || (peak_ram_usage * 100.f >= ram_limit_percent)
 	    || (conservative_margin <= 0)) {
 		PX4_ERR("Phase-1 timing/resource gate failed");
@@ -872,4 +886,75 @@ extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
 
 	PX4_INFO("Phase-1 timing/resource gate passed; Type 4 controller/theorem/HIL/flight gates remain open");
 	return 0;
+}
+
+static int benchmarkTaskEntry(int argc, char *argv[])
+{
+	(void)argc;
+	(void)argv;
+	benchmark_result.store(runBenchmark());
+	return 0;
+}
+
+extern "C" __EXPORT int type4_bench_main(int argc, char *argv[])
+{
+	int sample_count = DefaultSamples;
+	int budget_override_us = 0;
+
+	for (int argument = 1; argument < argc; ++argument) {
+		const bool sample_option = strcmp(argv[argument], "-n") == 0;
+		const bool budget_option = strcmp(argv[argument], "-b") == 0;
+
+		if (!sample_option && !budget_option) {
+			printUsage();
+			return 1;
+		}
+
+		if (++argument >= argc) {
+			printUsage();
+			return 1;
+		}
+
+		if (sample_option) {
+			if (!parsePositiveInt(argv[argument], MaxSamples, sample_count)) {
+				printUsage();
+				return 1;
+			}
+
+		} else if (!parsePositiveInt(argv[argument], INT_MAX, budget_override_us)) {
+			printUsage();
+			return 1;
+		}
+	}
+
+	bool expected_running = false;
+
+	if (!benchmark_running.compare_exchange(&expected_running, true)) {
+		PX4_ERR("benchmark already running");
+		return 1;
+	}
+
+	// Options are handed over through file scope rather than argv because the strings
+	// live on the caller's stack, which is gone once this function returns.
+	requested_sample_count = sample_count;
+	requested_budget_us = budget_override_us;
+	benchmark_finished.store(false);
+	benchmark_result.store(1);
+
+	// SCHED_PRIORITY_MAX matches the relative priority 0 that wq:rate_ctrl runs at, so
+	// the samples see the same preemption the allocator would see in the rate loop.
+	const px4_task_t benchmark_task = px4_task_spawn_cmd("type4_bench", SCHED_DEFAULT, SCHED_PRIORITY_MAX,
+					  BenchmarkTaskStackSize, benchmarkTaskEntry, nullptr);
+
+	if (benchmark_task < 0) {
+		PX4_ERR("failed to spawn benchmark task");
+		benchmark_running.store(false);
+		return 1;
+	}
+
+	while (!benchmark_finished.load()) {
+		px4_usleep(BenchmarkPollIntervalUs);
+	}
+
+	return benchmark_result.load();
 }
