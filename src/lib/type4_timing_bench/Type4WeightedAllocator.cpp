@@ -206,12 +206,22 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		resolved_curvature = solveCholesky(domain_hessian, zero_rhs, unused_solution, domain_size);
 	}
 
+	// Unresolved curvature on the free domain fails closed further down no matter
+	// which face wins, so enumerating first only costs time. That matters because
+	// the enumeration is the worst-case timing path the runtime gate measures, and
+	// spending it on a result that is discarded would inflate the measured maximum
+	// with work that can never produce a solution.
+	if ((domain_size > 0) && !resolved_curvature) {
+		reset();
+		result.status = Status::NumericalFailure;
+		return result;
+	}
+
 	bool solution_found = false;
 	bool certified_solution_found = false;
 	double best_solution[NumActuators] {};
 	uint8_t best_face = 0;
 	const uint8_t first_face = result.warm_start_attempted ? _warm_face : 0;
-	const bool can_certify_early = resolved_curvature;
 
 	auto evaluate_face = [&](uint8_t face) {
 		++result.iterations;
@@ -315,10 +325,6 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 			solution_found = true;
 		}
 
-		if (!can_certify_early) {
-			return;
-		}
-
 		constexpr double StrictKktToleranceScale = 512.0 * __DBL_EPSILON__;
 		bool strictly_optimal = true;
 
@@ -371,7 +377,7 @@ Type4WeightedAllocator::Result Type4WeightedAllocator::solve(const Problem &prob
 		}
 	}
 
-	if (!solution_found || ((domain_size > 0) && !resolved_curvature)) {
+	if (!solution_found) {
 		reset();
 		result.status = Status::NumericalFailure;
 		return result;

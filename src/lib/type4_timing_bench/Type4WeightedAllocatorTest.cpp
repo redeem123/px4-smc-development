@@ -602,8 +602,14 @@ TEST(Type4WeightedAllocatorTest, UnresolvedCurvatureFailsClosedInsteadOfReturnin
 	const auto result = allocator.solve(problem);
 	EXPECT_EQ(result.status, Type4WeightedAllocator::Status::NumericalFailure);
 	EXPECT_EQ(result.solution, Type4WeightedAllocator::ActuatorVector{});
-	EXPECT_EQ(result.faces_evaluated, Type4WeightedAllocator::NumFaces);
-	EXPECT_EQ(result.linear_solves, 65);
+
+	// Unresolved curvature on the free domain is detected before enumeration, so no
+	// face is evaluated. Any face solution would have been discarded anyway, and
+	// spending the full 81-face sweep on it would inflate the worst-case timing the
+	// runtime gate measures with work that can never produce a solution.
+	EXPECT_EQ(result.faces_evaluated, 0);
+	EXPECT_EQ(result.iterations, 0);
+	EXPECT_EQ(result.linear_solves, 0);
 }
 
 TEST(Type4WeightedAllocatorTest, EqualityFixedDirectionsDoNotRequireResolvedRegularization)
@@ -900,4 +906,65 @@ TEST(Type4WeightedAllocatorTest, PropagatedReachableBoundsFollowExactReturnedCom
 
 		previous_command = result.solution;
 	}
+}
+
+
+TEST(Type4WeightedAllocatorTest, FailedMotorPinnedByEqualBoundsLeavesRemainingAxesOptimal)
+{
+	Type4WeightedAllocator allocator;
+	auto problem = baseProblem();
+
+	for (int axis = 0; axis < 4; ++axis) {
+		problem.effectiveness(axis, axis) = 1.f;
+		problem.target(axis) = 0.5f * static_cast<float>(axis + 1) / 4.f;
+	}
+
+	// A detected motor failure reaches the allocator as a collapsed box on that
+	// actuator. The axes it does not drive must keep their unconstrained optimum
+	// rather than being dragged by the pinned column.
+	problem.lower_bound(2) = 0.f;
+	problem.upper_bound(2) = 0.f;
+
+	const auto result = allocator.solve(problem);
+	expectValidResult(result);
+	EXPECT_EQ(result.solution(2), 0.f);
+
+	for (const int actuator : {0, 1, 3}) {
+		EXPECT_NEAR(result.solution(actuator), problem.target(actuator) / 1.1f, 1e-5f);
+	}
+}
+
+TEST(Type4WeightedAllocatorTest, EffectivenessChangeMatchesColdSolveExactly)
+{
+	Type4WeightedAllocator warm_allocator;
+	auto problem = baseProblem();
+
+	for (int axis = 0; axis < 4; ++axis) {
+		problem.effectiveness(axis, axis) = 1.f;
+		problem.target(axis) = 2.f * static_cast<float>(axis + 1);
+	}
+
+	expectValidResult(warm_allocator.solve(problem));
+
+	// Losing actuator 1 rewrites the effectiveness matrix, not just the bounds. The
+	// warm face cached from the healthy geometry must not survive into a problem it
+	// no longer describes, so the answer has to be bit-identical to a cold solve.
+	for (int axis = 0; axis < 4; ++axis) {
+		problem.effectiveness(axis, 1) = 0.f;
+		problem.effectiveness(axis, 3) = 0.6f * static_cast<float>(axis + 1);
+	}
+
+	const auto warm = warm_allocator.solve(problem);
+	expectValidResult(warm);
+
+	Type4WeightedAllocator cold_allocator;
+	const auto cold = cold_allocator.solve(problem);
+	expectValidResult(cold);
+
+	EXPECT_EQ(warm.solution, cold.solution);
+	EXPECT_EQ(warm.lower_active_mask, cold.lower_active_mask);
+	EXPECT_EQ(warm.upper_active_mask, cold.upper_active_mask);
+	EXPECT_EQ(warm.objective, cold.objective);
+	EXPECT_FALSE(cold.warm_start_attempted);
+	EXPECT_TRUE(warm.warm_start_attempted);
 }
